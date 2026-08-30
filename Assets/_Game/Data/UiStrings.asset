@@ -19,3 +19,5 @@ MonoBehaviour:
     text: The dogs get a ride home. You get a ride downtown.
   - key: gameover.repeat
     text: RIDE AGAIN
+  - key: hud.dogs
+    text: DOGS
