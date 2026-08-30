@@ -55,19 +55,25 @@ namespace DogSnatcher.Gameplay
                         continue;
                     }
 
+                    // A car holds its line; only the lighter vehicle gives way. Two of a kind
+                    // split the correction evenly.
+                    float shareA = 0.5f, shareB = 0.5f;
+                    if (a.Heavy && !b.Heavy) { shareA = 0f; shareB = 1f; }
+                    else if (b.Heavy && !a.Heavy) { shareA = 1f; shareB = 0f; }
+
                     if (overlapX <= overlapZ)
                     {
                         float dir = dx >= 0f ? 1f : -1f;
-                        float step = Mathf.Min(overlapX * 0.5f, maxStepPerFrame);
-                        a.SetLocalX(ClampX(a, ca.x - dir * step));
-                        b.SetLocalX(ClampX(b, cb.x + dir * step));
+                        float total = Mathf.Min(overlapX, maxStepPerFrame * 2f);
+                        a.SetLocalX(ClampX(a, ca.x - dir * total * shareA));
+                        b.SetLocalX(ClampX(b, cb.x + dir * total * shareB));
                     }
                     else
                     {
                         float dir = dz >= 0f ? 1f : -1f;
-                        float step = Mathf.Min(overlapZ * 0.5f, maxStepPerFrame);
-                        a.SetLocalZ(ca.z - dir * step);
-                        b.SetLocalZ(cb.z + dir * step);
+                        float total = Mathf.Min(overlapZ, maxStepPerFrame * 2f);
+                        a.SetLocalZ(ca.z - dir * total * shareA);
+                        b.SetLocalZ(cb.z + dir * total * shareB);
                     }
                 }
             }
