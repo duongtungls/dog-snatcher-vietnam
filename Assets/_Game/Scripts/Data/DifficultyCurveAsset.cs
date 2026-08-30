@@ -11,8 +11,11 @@ namespace DogSnatcher.Data
     public sealed class DifficultyCurveAsset : ScriptableObject
     {
         [Header("Speed ramp (metres / second)")]
-        [SerializeField, Min(0f)] private float minSpeed = 8f;
-        [SerializeField, Min(0f)] private float maxSpeed = 20f;
+        [Tooltip("Run speed at distance 0. The Dog Snatcher rides an above-average getaway pace " +
+                 "from the start - well over civilian traffic (~6-9 m/s), so the player overtakes " +
+                 "the street and only a chasing pursuer keeps up.")]
+        [SerializeField, Min(0f)] private float minSpeed = 10f;
+        [SerializeField, Min(0f)] private float maxSpeed = 15f;
 
         [Tooltip("Metres over which the ramp covers ~63% of its range.")]
         [SerializeField, Min(1f)] private float distanceConstant = 1400f;

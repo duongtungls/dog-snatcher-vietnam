@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad95c3adbc1fc4ceebc42a445e19999b, type: 3}
   m_Name: DifficultyCurve
   m_EditorClassIdentifier: 
-  minSpeed: 4
-  maxSpeed: 10
+  minSpeed: 10
+  maxSpeed: 15
   distanceConstant: 1400
   spawnDensity:
     serializedVersion: 2
