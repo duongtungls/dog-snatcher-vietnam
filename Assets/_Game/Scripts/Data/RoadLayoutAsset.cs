@@ -70,6 +70,22 @@ namespace DogSnatcher.Data
             return -LaneBandWidth * 0.5f + laneWidth * (clamped + 0.5f);
         }
 
+        /// <summary>
+        /// X of the painted line between lane <paramref name="leftLaneIndex"/> and the next lane
+        /// out - where a two-lane-wide vehicle (a car) sits so it straddles both lanes evenly.
+        /// </summary>
+        public float GetLaneBoundaryX(int leftLaneIndex)
+        {
+            int l = Mathf.Clamp(leftLaneIndex, 0, laneCount - 2);
+            return (GetLaneCenterX(l) + GetLaneCenterX(l + 1)) * 0.5f;
+        }
+
+        /// <summary>Number of two-lane straddle positions among the player-direction lanes.</summary>
+        public int UpLanePairCount => Mathf.Max(0, UpLaneCount - 1);
+
+        /// <summary>Number of two-lane straddle positions among the oncoming lanes.</summary>
+        public int DownLanePairCount => Mathf.Max(0, DownLaneCount - 1);
+
         /// <summary>Left edge (min X) of the player-direction half of the road.</summary>
         public float UpBandMinX => -LaneBandWidth * 0.5f + laneWidth * DownLaneCount;
 
@@ -89,5 +105,16 @@ namespace DogSnatcher.Data
             float offset = RoadSurfaceHalfWidth + sidewalkWidth * 0.5f;
             return leftSide ? -offset : offset;
         }
+
+        /// <summary>
+        /// Road-facing edge of a sidewalk - where a dog lingers so a rider in the outer lane
+        /// (and only the outer lane) can reach it. GDD 1: "Dogs always sit on the sidewalk".
+        /// </summary>
+        public float SidewalkNearEdgeX(bool leftSide) =>
+            leftSide ? -RoadSurfaceHalfWidth : RoadSurfaceHalfWidth;
+
+        /// <summary>Building-facing edge of a sidewalk - where a dog steps out of a doorway.</summary>
+        public float SidewalkFarEdgeX(bool leftSide) =>
+            leftSide ? -(RoadSurfaceHalfWidth + sidewalkWidth) : RoadSurfaceHalfWidth + sidewalkWidth;
     }
 }
