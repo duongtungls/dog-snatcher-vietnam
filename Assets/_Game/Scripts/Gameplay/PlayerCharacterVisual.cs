@@ -10,10 +10,12 @@ namespace DogSnatcher.Gameplay
     /// The billboard rotation is NOT auto-synced to the camera every enable - that fought manual
     /// tuning (the rotation would silently reset to match the rig's pitch on every Play). It's set
     /// once via <see cref="ApplyBillboard"/> - on setup, or by hand when the camera tilt changes -
-    /// and the Transform value you leave it at is what sticks.
+    /// and the Transform value you leave it at is the base this treats as "upright". At runtime
+    /// <see cref="SetLean"/> rolls the sprite around that base so the rider banks into a turn;
+    /// PlayerSteering feeds it a signed steer amount every frame.
     ///
-    /// Owns nothing but presentation. Gameplay calls PlaySnatchLeft / PlaySnatchRight / PlayCrash;
-    /// it never reaches into the Animator directly.
+    /// Owns nothing but presentation. Gameplay calls PlaySnatchLeft / PlaySnatchRight / PlayCrash
+    /// and SetLean; it never reaches into the Animator or the Transform directly.
     /// </summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -29,27 +31,75 @@ namespace DogSnatcher.Gameplay
                  "is called explicitly - see the type doc for why this isn't automatic.")]
         [SerializeField] private FakeTwoDCameraRig rig;
 
+        [Header("Steering lean")]
+        [Tooltip("Bank angle, degrees, at full steer (SetLean(±1)). Negative flips the direction.")]
+        [SerializeField] private float maxLeanAngle = 20f;
+
+        [Tooltip("How fast the visible lean chases the steer input, in lean-units per second.")]
+        [SerializeField, Min(0.1f)] private float leanResponse = 12f;
+
         [Tooltip("Placeholder crash-test key while there's no crash trigger yet (GDD 4.1). " +
-                 "A/D belong to PlayerLaneController now - GDD 4.3 makes snatching proximity-driven " +
+                 "A/D belong to PlayerSteering now - GDD 4.3 makes snatching proximity-driven " +
                  "once DogSpawner/SnarePole exist, so nothing here fires a snatch off a keypress.")]
         [SerializeField] private bool debugKeyboard = true;
 
         private Animator animator;
 
+        private Quaternion baseLocalRotation;
+        private bool baseRotationCaptured;
+        private float targetLean;
+        private float currentLean;
+
         private void Awake() => Cache();
 
-        private void OnEnable() => Cache();
+        private void OnEnable()
+        {
+            Cache();
+            CaptureBase();
+        }
 
         private void Update()
         {
-            if (!Application.isPlaying || !debugKeyboard) return;
+            if (!Application.isPlaying)
+            {
+                // Edit mode: keep tracking whatever rotation the scene author leaves on the
+                // Transform, so it stays the "upright" base once Play starts. Never roll here.
+                CaptureBase();
+                return;
+            }
 
-            if (Input.GetKeyDown(KeyCode.C)) PlayCrash();
+            if (debugKeyboard && Input.GetKeyDown(KeyCode.C)) PlayCrash();
+
+            TickLean();
         }
 
         private void Cache()
         {
             if (animator == null) animator = GetComponent<Animator>();
+        }
+
+        private void CaptureBase()
+        {
+            baseLocalRotation = transform.localRotation;
+            baseRotationCaptured = true;
+        }
+
+        /// <summary>
+        /// Signed steer amount, -1 (full left) .. +1 (full right). Drives how far the rider
+        /// banks; the visible lean eases toward it rather than snapping. Called every frame by
+        /// PlayerSteering.
+        /// </summary>
+        public void SetLean(float signedLean01)
+        {
+            targetLean = Mathf.Clamp(signedLean01, -1f, 1f);
+        }
+
+        private void TickLean()
+        {
+            if (!baseRotationCaptured) CaptureBase();
+
+            currentLean = Mathf.MoveTowards(currentLean, targetLean, leanResponse * Time.deltaTime);
+            transform.localRotation = baseLocalRotation * Quaternion.Euler(0f, 0f, -currentLean * maxLeanAngle);
         }
 
         /// <summary>
@@ -62,6 +112,7 @@ namespace DogSnatcher.Gameplay
         {
             if (rig == null) return;
             transform.rotation = rig.BillboardRotation;
+            CaptureBase();
         }
 
         [ContextMenu("Play Snatch Left")]
