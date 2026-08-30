@@ -60,6 +60,19 @@ namespace DogSnatcher.Gameplay
         [Tooltip("Steer out of the way when the player's X is within this distance (metres) and roughly alongside in Z.")]
         [SerializeField, Min(0f)] private float avoidRadius = 1.4f;
 
+        [Header("Rider avoidance")]
+        [Tooltip("Scan this far ahead in-lane for a slower bike to react to, metres.")]
+        [SerializeField, Min(0.1f)] private float overtakeLookahead = 3.6f;
+
+        [Tooltip("Pull out to pass once the gap to the bike ahead drops below this, metres.")]
+        [SerializeField, Min(0.1f)] private float passTriggerGap = 2.6f;
+
+        [Tooltip("Closest this bike will sit behind another in the same lane when it can't pass, metres.")]
+        [SerializeField, Min(0.1f)] private float minFollowGap = 1.9f;
+
+        [Tooltip("Seconds to hold a lane after changing it, so a bike doesn't weave every frame.")]
+        [SerializeField, Min(0f)] private float laneSettleTime = 0.6f;
+
         [Tooltip("How far past the visible frame edge to spawn / despawn, metres.")]
         [SerializeField, Min(0f)] private float edgeMargin = 2f;
 
@@ -72,6 +85,8 @@ namespace DogSnatcher.Gameplay
         private float wobblePhase;
         private int laneIndex;
         private float laneTargetX;
+        private float laneSettleTimer;
+        private float lastAheadGap = float.MaxValue;
 
         private void OnEnable()
         {
@@ -102,8 +117,27 @@ namespace DogSnatcher.Gameplay
 
             if (rideVfx != null) rideVfx.SetSpeed(cruise);
 
+            float zStep = localRate * dt;
+
+            // Don't drive through the bike ahead in this lane: pull out to a free lane to pass,
+            // and until then hold station a bike-length back rather than climbing into it.
+            int forwardSign = encounter == Encounter.SameDirection ? 1 : -1;
+            laneSettleTimer -= dt;
+            RiderFootprint ahead = NearestRiderAhead(forwardSign, out float gap);
+            if (ahead != null && gap < overtakeLookahead)
+            {
+                bool closing = gap < lastAheadGap - 0.001f;   // only weave out if we're gaining on it
+                if (closing && gap < passTriggerGap && laneSettleTimer <= 0f && TryChangeLaneToPass(forwardSign))
+                    laneSettleTimer = laneSettleTime;
+
+                float allowedClose = gap - minFollowGap;
+                if (zStep * forwardSign > allowedClose)
+                    zStep = allowedClose * forwardSign;
+            }
+            lastAheadGap = ahead != null ? gap : float.MaxValue;
+
             Vector3 p = transform.localPosition;
-            p.z += localRate * dt;
+            p.z += zStep;
             p.x = Mathf.MoveTowards(p.x, laneTargetX, laneChangeSpeed * dt);
             transform.localPosition = p;
 
@@ -118,6 +152,9 @@ namespace DogSnatcher.Gameplay
         private void SpawnNext()
         {
             if (layout == null || cameraRig == null) return;
+
+            lastAheadGap = float.MaxValue;
+            laneSettleTimer = 0f;
 
             encounter = rng.NextDouble() < sameDirectionChance ? Encounter.SameDirection : Encounter.Oncoming;
             baseSpeed = RangeValue(encounter == Encounter.SameDirection ? sameDirectionSpeedRange : oncomingSpeedRange);
@@ -169,6 +206,83 @@ namespace DogSnatcher.Gameplay
         {
             int count = layout.DownLaneCount;
             return count <= 0 ? 0 : rng.Next(0, count);
+        }
+
+        /// <summary>
+        /// Nearest other rider directly ahead of this one in the same lane, measured in this
+        /// bike's direction of travel relative to its own stream. <paramref name="forwardSign"/>
+        /// is +1 for same-direction traffic (it catches bikes at higher Z), -1 for oncoming.
+        /// </summary>
+        private RiderFootprint NearestRiderAhead(int forwardSign, out float gap)
+        {
+            gap = float.MaxValue;
+            RiderFootprint hit = null;
+
+            Vector3 me = transform.localPosition;
+            float myHalfWidth = layout.LaneWidth * 0.45f;               // a bike is about a lane wide
+
+            var all = RiderFootprint.All;
+            for (int i = 0; i < all.Count; i++)
+            {
+                var f = all[i];
+                if (f == null || f.transform == transform || f.IsPlayer) continue;
+
+                Vector3 c = f.LocalCenter;
+                // Paths clear in X? Compare footprint half-widths, so a two-lane car ahead
+                // registers from either of the lanes it straddles.
+                if (Mathf.Abs(c.x - me.x) > myHalfWidth + f.HalfWidth) continue;
+
+                float aheadDist = (c.z - me.z) * forwardSign;            // >0 == in front of me
+                if (aheadDist <= 0f || aheadDist >= gap) continue;
+                gap = aheadDist;
+                hit = f;
+            }
+            return hit;
+        }
+
+        /// <summary>
+        /// Try to slide one lane over - staying inside this bike's own direction band - into a
+        /// slot that is clear now and a little way ahead. Returns true if a new lane was taken.
+        /// </summary>
+        private bool TryChangeLaneToPass(int forwardSign)
+        {
+            int bandFirst, bandLast;
+            if (encounter == Encounter.SameDirection)
+            {
+                bandFirst = layout.FirstUpLane;
+                bandLast = layout.LaneCount - 1;
+            }
+            else
+            {
+                bandFirst = 0;
+                bandLast = layout.DownLaneCount - 1;
+            }
+            if (bandLast <= bandFirst) return false;                     // single-lane band, nowhere to go
+
+            float z = transform.localPosition.z;
+
+            for (int side = -1; side <= 1; side += 2)
+            {
+                int cand = laneIndex + side;
+                if (cand < bandFirst || cand > bandLast) continue;
+
+                float cx = layout.GetLaneCenterX(cand);
+                if (!LaneClearAt(cx, z)) continue;
+                if (!LaneClearAt(cx, z + forwardSign * overtakeLookahead)) continue;
+
+                if (playerTransform != null)
+                {
+                    Vector3 pl = playerTransform.localPosition;
+                    if (Mathf.Abs(pl.z - z) < overtakeLookahead &&
+                        Mathf.Abs(pl.x - cx) < layout.LaneWidth * 0.6f)
+                        continue;                                        // don't merge onto the player
+                }
+
+                laneIndex = cand;
+                laneTargetX = cx;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>No other rider sitting in this lane near the given Z.</summary>
