@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9d1856999d50505db8831e83ade292a, type: 3}
   m_Name: RoadLayout
   m_EditorClassIdentifier: 
-  laneCount: 4
-  laneWidth: 1.4
+  laneCount: 6
+  laneWidth: 1.3
+  upLaneCount: 3
   sidewalkWidth: 1.6
   roadEdgeMargin: 0.456
