@@ -27,6 +27,10 @@ namespace DogSnatcher.Gameplay
     {
         private enum Encounter { SameDirection, Oncoming }
 
+        // Tail: on the player's six. PeelOff: not behind them yet - keep the current heading until
+        // we are (an oncoming car runs off the bottom of the frame). Reenter: back on from behind.
+        private enum ChasePhase { Tail, PeelOff, Reenter }
+
         [Header("Data")]
         [SerializeField] private RoadLayoutAsset layout;
         [SerializeField] private CameraRigAsset cameraRig;
@@ -92,6 +96,7 @@ namespace DogSnatcher.Gameplay
         private float laneSettleTimer;
         private float lastAheadGap = float.MaxValue;
         private bool wasChasing;
+        private ChasePhase chasePhase;
 
         private void Awake()
         {
@@ -118,7 +123,11 @@ namespace DogSnatcher.Gameplay
             bool chasing = forceChase || (wantedLevel != null && wantedLevel.CurrentStars > 0);
             if (chasing)
             {
-                wasChasing = true;
+                if (!wasChasing)
+                {
+                    wasChasing = true;
+                    BeginChase();
+                }
                 TickChase(dt);
                 return;
             }
@@ -170,26 +179,63 @@ namespace DogSnatcher.Gameplay
 
         private float RangeValue(Vector2 range) => Mathf.Lerp(range.x, range.y, (float)rng.NextDouble());
 
+        /// <summary>Decide how this car gets onto the player's tail the moment the chase starts.</summary>
+        private void BeginChase()
+        {
+            float pz = playerTransform != null ? playerTransform.localPosition.z : 0f;
+            chasePhase = (encounter == Encounter.SameDirection && transform.localPosition.z <= pz - chaseGap)
+                ? ChasePhase.Tail
+                : ChasePhase.PeelOff;
+        }
+
         /// <summary>
-        /// Tail the player: line up with their X across the whole road, hold a fixed distance
-        /// back, always rear view. A truck is heavier on the wheel than the police bike.
+        /// Run the player down. The car never reverses up the street and only tails from behind:
+        /// an oncoming car keeps going, drops off the bottom of the frame and swings back in from
+        /// the rear; a same-way car still ahead eases off until the player passes. A truck is
+        /// heavier on the wheel than the police bike.
         /// </summary>
         private void TickChase(float dt)
         {
-            if (visual != null) visual.FaceUp();
-
             Vector3 p = transform.localPosition;
-            if (playerTransform != null)
-            {
-                Vector3 pl = playerTransform.localPosition;
-                float limit = Mathf.Max(0f, layout.RoadSurfaceHalfWidth - bodyHalfWidth);
-                float targetX = Mathf.Clamp(pl.x, -limit, limit);
-                p.x = Mathf.MoveTowards(p.x, targetX, chaseSideSpeed * dt);
-                p.z = Mathf.MoveTowards(p.z, pl.z - chaseGap, chaseCloseSpeed * dt);
-            }
-            transform.localPosition = p;
+            Vector3 pl = playerTransform != null ? playerTransform.localPosition : Vector3.zero;
+            float run = playerSpeed.MetresPerSecond;
+            float limit = Mathf.Max(0f, layout.RoadSurfaceHalfWidth - bodyHalfWidth);
 
-            if (rideVfx != null) rideVfx.SetSpeed(playerSpeed.MetresPerSecond);
+            switch (chasePhase)
+            {
+                case ChasePhase.PeelOff when encounter == Encounter.Oncoming:
+                    if (visual != null) visual.FaceDown();
+                    p.z -= (chaseCloseSpeed + run) * dt;                 // barrel on down-screen and out
+                    if (p.z < BottomEdgeZ() - edgeMargin) chasePhase = ChasePhase.Reenter;
+                    break;
+
+                case ChasePhase.PeelOff:                                 // same way, still ahead
+                    if (visual != null) visual.FaceUp();
+                    p.z += (Mathf.Min(chaseCloseSpeed, run * 0.6f) - run) * dt;   // slower than the player: never reverses
+                    p.x = Mathf.MoveTowards(p.x, Mathf.Clamp(pl.x, -limit, limit), chaseSideSpeed * 0.5f * dt);
+                    if (p.z <= pl.z - chaseGap) chasePhase = ChasePhase.Tail;
+                    break;
+
+                case ChasePhase.Reenter:
+                    if (visual != null) visual.FaceUp();
+                    encounter = Encounter.SameDirection;
+                    p.z = BottomEdgeZ() - edgeMargin;
+                    p.x = Mathf.Clamp(pl.x, -limit, limit);
+                    chasePhase = ChasePhase.Tail;
+                    break;
+
+                default: // Tail
+                    if (visual != null) visual.FaceUp();
+                    p.x = Mathf.MoveTowards(p.x, Mathf.Clamp(pl.x, -limit, limit), chaseSideSpeed * dt);
+                    float desiredZ = pl.z - chaseGap;
+                    p.z += p.z < desiredZ
+                        ? Mathf.Min(chaseCloseSpeed * dt, desiredZ - p.z)
+                        : Mathf.Max(-(chaseCloseSpeed * 0.4f), -(run * 0.85f)) * dt;   // too close: drift back, still forward in world space
+                    break;
+            }
+
+            transform.localPosition = p;
+            if (rideVfx != null) rideVfx.SetSpeed(run);
         }
 
         private void SpawnNext()
@@ -198,6 +244,7 @@ namespace DogSnatcher.Gameplay
 
             lastAheadGap = float.MaxValue;
             laneSettleTimer = 0f;
+            chasePhase = ChasePhase.Tail;
 
             encounter = rng.NextDouble() < sameDirectionChance ? Encounter.SameDirection : Encounter.Oncoming;
             baseSpeed = RangeValue(encounter == Encounter.SameDirection ? sameDirectionSpeedRange : oncomingSpeedRange);
