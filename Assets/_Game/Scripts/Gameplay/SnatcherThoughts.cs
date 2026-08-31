@@ -8,11 +8,11 @@ namespace DogSnatcher.Gameplay
     /// Decides what the dog snatcher is "thinking" and feeds it to the rider's
     /// <see cref="ThoughtBubble"/> (dog-snatcher-bubbles sheet).
     ///
-    /// - A swing starts            -> the target dog
-    /// - A dog lands in the crate  -> a wad of cash
-    /// - A police bike draws near  -> a traffic cop   (also 1-2 Wanted stars, Milestone 2)
-    /// - A police car draws near   -> a police car    (also 3+ Wanted stars, Milestone 2)
-    /// - The run crashes           -> bubble off
+    /// - A swing starts               -> the target dog
+    /// - A dog lands in the crate     -> a wad of cash
+    /// - A police bike comes into view ahead -> a traffic cop  (also 1-2 Wanted stars, Milestone 2)
+    /// - A police car comes into view ahead  -> a police car   (also 3+ Wanted stars, Milestone 2)
+    /// - The run crashes              -> bubble off
     ///
     /// Higher-priority thoughts (cop &gt; cash &gt; target) don't get stomped by a lesser one
     /// while they're still on screen. Mostly event-driven; the per-frame work is a cheap
@@ -40,10 +40,12 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private Sprite copCarBubble;
 
         [Header("Police awareness")]
-        [Tooltip("A police unit closer than this (metres, rig-local) makes the snatcher glance at it.")]
-        [SerializeField, Min(0f)] private float policeAlertRange = 6f;
+        [Tooltip("Spot a police unit this far AHEAD (metres, rig-local) - i.e. as it comes into " +
+                 "view up the screen. A cop that has already drawn level or passed behind is not " +
+                 "reacted to.")]
+        [SerializeField, Min(0f)] private float policeSightRange = 16f;
 
-        [Tooltip("Shortest gap between two police bubbles, seconds - so a stream of passing cops " +
+        [Tooltip("Shortest gap between two police bubbles, seconds - so a stream of oncoming cops " +
                  "doesn't spam the bubble.")]
         [SerializeField, Min(0f)] private float policeAlertCooldown = 5f;
 
@@ -103,16 +105,17 @@ namespace DogSnatcher.Gameplay
             }
         }
 
-        // A cop inside the alert circle earns a nervous glance every policeAlertCooldown seconds -
-        // long enough that a road full of passing patrols doesn't spam the bubble. The nearest
-        // unit at that moment picks which bubble (bike vs car).
+        // A cop coming into view ahead earns a nervous glance, at most once every
+        // policeAlertCooldown seconds so a lane of oncoming patrols doesn't spam the bubble.
+        // Only units still in front of the rider count - once one has drawn level or slipped
+        // behind, the snatcher has "gotten away with it" and doesn't react.
         private void ScanPolice()
         {
             if (policeCooldownLeft > 0f) return;
             if (bubble == null || !bubble.Idle) return;   // slot in at a clear moment, don't stomp
 
             Vector3 me = transform.localPosition;
-            float bestSqr = policeAlertRange * policeAlertRange;
+            float bestDz = policeSightRange;
             PoliceThreat nearest = null;
 
             var all = PoliceThreat.All;
@@ -120,9 +123,10 @@ namespace DogSnatcher.Gameplay
             {
                 var pt = all[i];
                 if (pt == null) continue;
-                Vector3 d = pt.LocalCenter - me;
-                float sqr = d.x * d.x + d.z * d.z;
-                if (sqr < bestSqr) { bestSqr = sqr; nearest = pt; }
+                float dz = pt.LocalCenter.z - me.z;        // + = ahead of the rider, up the screen
+                if (dz <= 0f || dz > bestDz) continue;     // level / passed / not in sight yet
+                bestDz = dz;
+                nearest = pt;
             }
 
             if (nearest == null) return;
