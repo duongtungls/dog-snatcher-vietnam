@@ -240,6 +240,53 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -12}
   m_SizeDelta: {x: 520, y: 180}
   m_Pivot: {x: 0.5, y: 1}
+--- !u!1 &184882103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 184882105}
+  - component: {fileID: 184882104}
+  m_Layer: 0
+  m_Name: Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &184882104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184882103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d926b21d71b50955b935d75964b370f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  clip: {fileID: 8300000, guid: 30afc0a65e4a4004a9937af9af4b9a56, type: 3}
+  volume: 0.55
+  fadeSeconds: 1.2
+--- !u!4 &184882105
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184882103}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &223099414
 GameObject:
   m_ObjectHideFlags: 0
@@ -2135,7 +2182,7 @@ Transform:
   m_GameObject: {fileID: 825060578}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 4.503332}
+  m_LocalPosition: {x: 0, y: 0, z: 5.5425625}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4649,6 +4696,7 @@ MonoBehaviour:
   speedChannel: {fileID: 11400000, guid: 18deb90ce922ed78d836d6438283cb26, type: 2}
   difficulty: {fileID: 11400000, guid: 8f118714a09a1df9b800ad5bfc3b5a85, type: 2}
   launchTime: 0.75
+  cruiseSpeedOverride: -1
   brake: {fileID: 11400000, guid: c8d0d194fc311158daa0b7d6517f8025, type: 2}
   maxBrakeFraction: 0.45
   lifecycle: {fileID: 11400000, guid: 7f3ae3ed0068b7adcbbb8d514d5fad24, type: 2}
@@ -5778,7 +5826,7 @@ Camera:
   far clip plane: 80
   field of view: 38
   orthographic: 0
-  orthographic size: 13
+  orthographic size: 16
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -5803,7 +5851,7 @@ Transform:
   m_GameObject: {fileID: 2104001310}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
-  m_LocalPosition: {x: 0, y: 32.696568, z: -14.374038}
+  m_LocalPosition: {x: 0, y: 40.241932, z: -17.691124}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6335,3 +6383,4 @@ SceneRoots:
   - {fileID: 906357365}
   - {fileID: 1205573705}
   - {fileID: 1415979503}
+  - {fileID: 184882105}
