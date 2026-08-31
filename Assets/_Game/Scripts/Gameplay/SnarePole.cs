@@ -59,6 +59,9 @@ namespace DogSnatcher.Gameplay
         [Tooltip("Reach duration to assume when no PlayerCharacterVisual is wired, seconds.")]
         [SerializeField, Min(0.05f)] private float fallbackReachSeconds = 1.29f;
 
+        /// <summary>Raised the instant a swing begins, so the rider's thought bubble can react.</summary>
+        public event System.Action SwingStarted;
+
         private float cooldownLeft;
 
         // A dog we've started a swing at. It keeps moving; when it comes level the net catches it.
@@ -152,6 +155,7 @@ namespace DogSnatcher.Gameplay
             // Catch the dog as it comes level with the rider. We triggered at dz ~= leadDistance,
             // so this lands ~leadTime from now - the net at releaseAtReachFraction of its swing.
             pendingReleaseLeft = Mathf.Clamp(bestDz / closing, 0f, reachSeconds);
+            SwingStarted?.Invoke();
         }
     }
 }

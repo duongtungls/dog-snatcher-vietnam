@@ -154,6 +154,7 @@ GameObject:
   - component: {fileID: 8556137073313618346}
   - component: {fileID: 828003558643583115}
   - component: {fileID: 6042025358297317727}
+  - component: {fileID: 275442763017930832}
   m_Layer: 0
   m_Name: Police-car
   m_TagString: Untagged
@@ -251,6 +252,19 @@ MonoBehaviour:
   chaseCloseSpeed: 8
   edgeMargin: 3
   seed: 6001
+--- !u!114 &275442763017930832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3189763582675869672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d4eb5eedf28836d1a4347e314f0881a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kind: 1
 --- !u!1 &5795818659228034494
 GameObject:
   m_ObjectHideFlags: 0

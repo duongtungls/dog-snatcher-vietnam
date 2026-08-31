@@ -24,6 +24,9 @@ namespace DogSnatcher.Gameplay
 
         private enum State { Approaching, Lingering, Snatched }
 
+        /// <summary>What the dog is feeling - drives its thought bubble (<see cref="DogThoughts"/>).</summary>
+        public enum Mood { Wandering, Loitering, Spooked, Caught }
+
         [Header("Data")]
         [SerializeField] private RoadLayoutAsset layout;
         [SerializeField] private CameraRigAsset cameraRig;
@@ -81,6 +84,9 @@ namespace DogSnatcher.Gameplay
         public bool Snatchable =>
             (state == State.Approaching || state == State.Lingering) && !claimed;
 
+        /// <summary>Current mood, for the thought bubble. Read-only to the outside.</summary>
+        public Mood CurrentMood { get; private set; }
+
         /// <summary>Points to snatch this dog, or 0 with no definition wired (grey-box default).</summary>
         public int Score => definition != null ? definition.Score : 0;
 
@@ -134,6 +140,7 @@ namespace DogSnatcher.Gameplay
                 if (Mathf.Abs(p.x - kerbX) < 0.02f)
                 {
                     state = State.Lingering;
+                    if (CurrentMood == Mood.Wandering) CurrentMood = Mood.Loitering;
                     ambleBaseZ = p.z;
                     amblePhase = 0f;
                 }
@@ -162,7 +169,11 @@ namespace DogSnatcher.Gameplay
         /// pole targets it) and it won't recycle off the bottom edge before <see cref="Snatch"/>
         /// lands.
         /// </summary>
-        public void Claim() => claimed = true;
+        public void Claim()
+        {
+            claimed = true;
+            CurrentMood = Mood.Spooked;
+        }
 
         /// <summary>
         /// Yoinked: pop up, spin, arc toward the crate on the back of the bike, shrink to nothing,
@@ -173,6 +184,7 @@ namespace DogSnatcher.Gameplay
             if (state == State.Snatched) return;
             state = State.Snatched;
             claimed = false;
+            CurrentMood = Mood.Caught;
             snatchT = 0f;
             snatchFrom = transform.localPosition;
             snatchTarget = crate;
@@ -205,6 +217,7 @@ namespace DogSnatcher.Gameplay
         {
             claimed = false;
             state = rng.NextDouble() < lingerChance ? State.Lingering : State.Approaching;
+            CurrentMood = state == State.Lingering ? Mood.Loitering : Mood.Wandering;
             leftSide = rng.NextDouble() < 0.5;
 
             kerbX = layout.SidewalkNearEdgeX(leftSide) + (leftSide ? -kerbInset : kerbInset);
