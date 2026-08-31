@@ -76,9 +76,14 @@ MonoBehaviour:
   sameDirectionChance: 0.65
   sameDirectionSpeedRange: {x: 6, y: 8.5}
   oncomingSpeedRange: {x: 6, y: 9}
-  maxSameDirectionFraction: 0.9
+  speedVariation: 0.16
+  wobbleRate: 1.4
   laneChangeSpeed: 3.5
   avoidRadius: 1.4
+  overtakeLookahead: 3.6
+  passTriggerGap: 2.6
+  minFollowGap: 1.9
+  laneSettleTime: 0.6
   edgeMargin: 2
   seed: 2001
 --- !u!114 &8516950919968671393
@@ -95,6 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   halfExtents: {x: 0.38, y: 0.85}
   isPlayer: 0
+  heavy: 0
 --- !u!1 &7592244509542634791
 GameObject:
   m_ObjectHideFlags: 0
@@ -106,6 +112,7 @@ GameObject:
   - component: {fileID: 8557651013886016939}
   - component: {fileID: 4297011201180724565}
   - component: {fileID: 6273616288843748274}
+  - component: {fileID: 8547111143373919320}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -194,6 +201,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upSprite: {fileID: 1303963466, guid: 6164f0bf6788628308a4860695b6920e, type: 3}
   downSprite: {fileID: 265301653, guid: 6164f0bf6788628308a4860695b6920e, type: 3}
+--- !u!114 &8547111143373919320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7592244509542634791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a890d62068cac987b2f0a1a9eeac4cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraRig: {fileID: 11400000, guid: 891b3c528b6e0efe3a7ea46b1d90cac8, type: 2}
+  extraUprightDegrees: 0
 --- !u!1001 &2599549891147249817
 PrefabInstance:
   m_ObjectHideFlags: 0

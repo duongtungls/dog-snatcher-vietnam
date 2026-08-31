@@ -119,6 +119,7 @@ GameObject:
   - component: {fileID: 8557651013886016939}
   - component: {fileID: 4297011201180724565}
   - component: {fileID: 6273616288843748274}
+  - component: {fileID: 4011975256493289650}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -207,6 +208,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upSprite: {fileID: -1797759542, guid: 2fbb7634f63ea02d6803c9c4094baa40, type: 3}
   downSprite: {fileID: 798012354, guid: 2fbb7634f63ea02d6803c9c4094baa40, type: 3}
+--- !u!114 &4011975256493289650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7592244509542634791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a890d62068cac987b2f0a1a9eeac4cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraRig: {fileID: 11400000, guid: 891b3c528b6e0efe3a7ea46b1d90cac8, type: 2}
+  extraUprightDegrees: 0
 --- !u!1001 &2599549891147249817
 PrefabInstance:
   m_ObjectHideFlags: 0
