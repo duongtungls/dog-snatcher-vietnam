@@ -14,6 +14,9 @@ namespace DogSnatcher.Spawning
     /// When the run ends in a crash (<see cref="RunLifecycleChannel"/>) it brakes the run speed
     /// to a stop over <see cref="crashBrakeTime"/> so the whole world glides to a halt rather
     /// than freezing on the spot.
+    ///
+    /// Set <see cref="cruiseSpeedOverride"/> to hold a fixed speed and ignore the curve - the
+    /// menu scene uses that for a slow chill cruise behind the UI.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RunSpeedDriver : MonoBehaviour
@@ -21,8 +24,12 @@ namespace DogSnatcher.Spawning
         [SerializeField] private RunSpeedChannel speedChannel;
         [SerializeField] private DifficultyCurveAsset difficulty;
 
-        [Tooltip("Seconds spent easing from a standstill up to the curve speed at the start of a run.")]
+        [Tooltip("Seconds spent easing from a standstill up to speed at the start of a run.")]
         [SerializeField, Min(0f)] private float launchTime = 0.75f;
+
+        [Tooltip("0 or more forces a fixed run speed (m/s) and ignores the difficulty curve - " +
+                 "used by the menu scene for a slow chill cruise. Below 0 = follow the curve.")]
+        [SerializeField] private float cruiseSpeedOverride = -1f;
 
         [Header("Player brake")]
         [Tooltip("Optional. Player brake input (touch back zone / S key).")]
@@ -54,7 +61,8 @@ namespace DogSnatcher.Spawning
 
         private void Update()
         {
-            if (speedChannel == null || difficulty == null) return;
+            if (speedChannel == null) return;
+            if (cruiseSpeedOverride < 0f && difficulty == null) return;
 
             float dt = Time.deltaTime;
 
@@ -68,7 +76,9 @@ namespace DogSnatcher.Spawning
 
             elapsed += dt;
 
-            float target = difficulty.EvaluateSpeed(speedChannel.DistanceMetres);
+            float target = cruiseSpeedOverride >= 0f
+                ? cruiseSpeedOverride
+                : difficulty.EvaluateSpeed(speedChannel.DistanceMetres);
             float launch = launchTime > 0f ? Mathf.Clamp01(elapsed / launchTime) : 1f;
 
             currentSpeed = target * launch;

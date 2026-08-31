@@ -35,3 +35,15 @@ MonoBehaviour:
     text: PAUSED
   - key: hud.resume
     text: TAP TO RESUME
+  - key: menu.play
+    text: PLAY
+  - key: menu.continue
+    text: CONTINUE
+  - key: menu.leaderboard
+    text: LEADERBOARD
+  - key: menu.options
+    text: OPTIONS
+  - key: menu.back
+    text: BACK
+  - key: menu.comingSoon
+    text: COMING SOON
