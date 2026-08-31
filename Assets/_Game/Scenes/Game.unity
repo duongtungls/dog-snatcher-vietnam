@@ -2828,11 +2828,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layout: {fileID: 11400000, guid: f74c17b835287aec6a638caaccf91023, type: 2}
   dogCount: {fileID: 11400000, guid: 74538999af0e0638b95ef4b2168d5fe9, type: 2}
+  runSpeed: {fileID: 11400000, guid: 18deb90ce922ed78d836d6438283cb26, type: 2}
   lifecycle: {fileID: 11400000, guid: 7f3ae3ed0068b7adcbbb8d514d5fad24, type: 2}
   visual: {fileID: 1957508364}
   reachX: 1.6
-  reachZ: 1.6
+  catchBehindZ: 1.6
   cooldown: 0.5
+  releaseAtReachFraction: 0.5
+  fallbackReachSeconds: 1.29
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

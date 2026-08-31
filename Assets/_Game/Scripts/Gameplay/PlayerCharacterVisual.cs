@@ -38,6 +38,14 @@ namespace DogSnatcher.Gameplay
         [Tooltip("How fast the visible lean chases the steer input, in lean-units per second.")]
         [SerializeField, Min(0.1f)] private float leanResponse = 12f;
 
+        [Header("Snatch reach")]
+        [Tooltip("Effective duration of the reach animation (clip length divided by the state " +
+                 "speed), in seconds. SnatchLeft and SnatchRight are tuned to match. This is a " +
+                 "seed value; at runtime it is refreshed from the live Animator state the first " +
+                 "time a snatch plays, so it tracks any retune of the clips or state speeds. " +
+                 "SnarePole reads it to time the dog's yoink to the middle of the swing.")]
+        [SerializeField, Min(0.01f)] private float snatchReachSeconds = 1.2916666f;
+
         [Tooltip("Placeholder crash-test key while there's no crash trigger yet (GDD 4.1). " +
                  "A/D belong to PlayerSteering now - GDD 4.3 makes snatching proximity-driven " +
                  "once DogSpawner/SnarePole exist, so nothing here fires a snatch off a keypress.")]
@@ -49,6 +57,15 @@ namespace DogSnatcher.Gameplay
         private bool baseRotationCaptured;
         private float targetLean;
         private float currentLean;
+
+        private bool measuringSnatch;
+
+        /// <summary>
+        /// How long the reach animation actually takes on screen, in seconds. SnarePole times the
+        /// dog snatch against a fraction of this so the yoink lands mid-swing rather than on the
+        /// first frame. Kept honest at runtime from <see cref="AnimatorStateInfo.length"/>.
+        /// </summary>
+        public float SnatchReachSeconds => snatchReachSeconds;
 
         private void Awake() => Cache();
 
@@ -71,6 +88,8 @@ namespace DogSnatcher.Gameplay
             if (debugKeyboard && Input.GetKeyDown(KeyCode.C)) PlayCrash();
 
             TickLean();
+
+            if (measuringSnatch) MeasureSnatchReach();
         }
 
         private void Cache()
@@ -102,6 +121,20 @@ namespace DogSnatcher.Gameplay
             transform.localRotation = baseLocalRotation * Quaternion.Euler(0f, 0f, -currentLean * maxLeanAngle);
         }
 
+        // Once a snatch trigger fires we don't know the target state's on-screen length until the
+        // AnyState transition settles onto it - a frame or two later. Poll until it's the current
+        // state, read its speed-adjusted length, then stop.
+        private void MeasureSnatchReach()
+        {
+            if (animator == null) return;
+
+            AnimatorStateInfo st = animator.GetCurrentAnimatorStateInfo(0);
+            if (!st.IsName("SnatchLeft") && !st.IsName("SnatchRight")) return;
+
+            if (st.length > 0.01f) snatchReachSeconds = st.length;
+            measuringSnatch = false;
+        }
+
         /// <summary>
         /// Squares the billboard up with the camera's current pitch. Call after retuning
         /// <see cref="FakeTwoDCameraRig"/>'s tilt, or from the context menu - it no longer runs
@@ -127,8 +160,12 @@ namespace DogSnatcher.Gameplay
         private void Fire(int trigger)
         {
             Cache();
-            if (animator != null && animator.runtimeAnimatorController != null)
-                animator.SetTrigger(trigger);
+            if (animator == null || animator.runtimeAnimatorController == null) return;
+
+            animator.SetTrigger(trigger);
+
+            if (trigger == SnatchLeftTrigger || trigger == SnatchRightTrigger)
+                measuringSnatch = true;
         }
     }
 }

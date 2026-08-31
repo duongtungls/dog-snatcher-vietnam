@@ -65,6 +65,7 @@ namespace DogSnatcher.Gameplay
 
         private System.Random rng;
         private State state;
+        private bool claimed;
         private bool leftSide;
         private float kerbX;
         private float ambleBaseZ;
@@ -76,8 +77,9 @@ namespace DogSnatcher.Gameplay
         private Quaternion visualBaseRot;
         private Vector3 visualBaseScale;
 
-        /// <summary>The dog is on the sidewalk and can be snatched right now.</summary>
-        public bool Snatchable => state == State.Approaching || state == State.Lingering;
+        /// <summary>The dog is on the sidewalk and free for a pole to target right now.</summary>
+        public bool Snatchable =>
+            (state == State.Approaching || state == State.Lingering) && !claimed;
 
         /// <summary>Points to snatch this dog, or 0 with no definition wired (grey-box default).</summary>
         public int Score => definition != null ? definition.Score : 0;
@@ -146,11 +148,21 @@ namespace DogSnatcher.Gameplay
 
             transform.localPosition = p;
 
-            if (p.z < BottomEdgeZ() - edgeMargin) SpawnNext();
+            // A claimed dog keeps walking so the net can meet it, but must stay in play until the
+            // catch lands - don't recycle it off the bottom edge.
+            if (!claimed && p.z < BottomEdgeZ() - edgeMargin) SpawnNext();
         }
 
         private float TopEdgeZ() => cameraRig.CameraForwardOffset + cameraRig.GroundViewLength * 0.5f;
         private float BottomEdgeZ() => cameraRig.CameraForwardOffset - cameraRig.GroundViewLength * 0.5f;
+
+        /// <summary>
+        /// A pole has committed a swing at this dog. It keeps walking / loitering exactly as
+        /// before so the net can meet it, but it stops being <see cref="Snatchable"/> (no second
+        /// pole targets it) and it won't recycle off the bottom edge before <see cref="Snatch"/>
+        /// lands.
+        /// </summary>
+        public void Claim() => claimed = true;
 
         /// <summary>
         /// Yoinked: pop up, spin, arc toward the crate on the back of the bike, shrink to nothing,
@@ -160,6 +172,7 @@ namespace DogSnatcher.Gameplay
         {
             if (state == State.Snatched) return;
             state = State.Snatched;
+            claimed = false;
             snatchT = 0f;
             snatchFrom = transform.localPosition;
             snatchTarget = crate;
@@ -190,6 +203,7 @@ namespace DogSnatcher.Gameplay
 
         private void SpawnNext()
         {
+            claimed = false;
             state = rng.NextDouble() < lingerChance ? State.Lingering : State.Approaching;
             leftSide = rng.NextDouble() < 0.5;
 
