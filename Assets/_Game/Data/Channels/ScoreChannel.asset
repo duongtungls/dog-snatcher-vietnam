@@ -9,15 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d199afd89a7f8831eac9d202d6123d3a, type: 3}
-  m_Name: CameraRig
+  m_Script: {fileID: 11500000, guid: 6c87aad56041df29bbc61b482dff65a5, type: 3}
+  m_Name: ScoreChannel
   m_EditorClassIdentifier: 
-  projection: 1
-  orthographicSize: 16
-  tiltFromVerticalDegrees: 30
-  fieldOfView: 38
-  cameraHeight: 24
-  nearClip: 0.3
-  farClip: 80
-  playerScreenAnchor: 0.35
-  referenceAspect: 0.5625

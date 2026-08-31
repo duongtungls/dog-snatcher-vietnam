@@ -62,6 +62,9 @@ namespace DogSnatcher.Gameplay
         /// <summary>Raised the instant a swing begins, so the rider's thought bubble can react.</summary>
         public event System.Action SwingStarted;
 
+        /// <summary>Raised when a dog is yoinked into the crate, carrying its point value (GDD §5).</summary>
+        public event System.Action<int> DogSnatched;
+
         private float cooldownLeft;
 
         // A dog we've started a swing at. It keeps moving; when it comes level the net catches it.
@@ -93,8 +96,10 @@ namespace DogSnatcher.Gameplay
                 pendingReleaseLeft -= Time.deltaTime;
                 if (pendingReleaseLeft <= 0f)
                 {
+                    int points = pendingDog.Score;
                     pendingDog.Snatch(transform);
                     if (dogCount != null) dogCount.Snatched();
+                    DogSnatched?.Invoke(points);
                     pendingDog = null;
                     cooldownLeft = cooldown;
                 }

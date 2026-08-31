@@ -21,3 +21,17 @@ MonoBehaviour:
     text: RIDE AGAIN
   - key: hud.dogs
     text: DOGS
+  - key: hud.score
+    text: SCORE
+  - key: hud.combo
+    text: COMBO
+  - key: hud.alert
+    text: ALERT
+  - key: hud.speed
+    text: SPEED
+  - key: hud.speedUnit
+    text: KM/H
+  - key: hud.paused
+    text: PAUSED
+  - key: hud.resume
+    text: TAP TO RESUME
