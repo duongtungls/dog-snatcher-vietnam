@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 6845629553574255864}
   - component: {fileID: 3644235427220299438}
   - component: {fileID: 9113477215435854422}
+  - component: {fileID: 4115193461717637567}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -111,7 +112,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3069592002853508617}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0.6946584, y: 0, z: 0, w: 0.7193398}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -209,6 +210,20 @@ MonoBehaviour:
   leanResponse: 12
   snatchReachSeconds: 1.2916666
   debugKeyboard: 1
+--- !u!114 &4115193461717637567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3069592002853508617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a890d62068cac987b2f0a1a9eeac4cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraRig: {fileID: 11400000, guid: 891b3c528b6e0efe3a7ea46b1d90cac8, type: 2}
+  extraUprightDegrees: 28
 --- !u!1 &6041084244368125102
 GameObject:
   m_ObjectHideFlags: 0
@@ -382,13 +397,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   layout: {fileID: 11400000, guid: f74c17b835287aec6a638caaccf91023, type: 2}
   visual: {fileID: 9113477215435854422}
-  dragWorldWidth: 6
-  keyboardMoveSpeed: 7
+  steerSpeed: 7
   positionSmoothTime: 0.09
   edgeInset: 0.2
+  brakeZoneHeight: 0.26
+  centreDeadZone: 0.14
+  brakeRampTime: 0.18
+  useMouseAsTouch: 1
+  drawDebugZones: 0
   leanReferenceSpeed: 6
   debugKeyboard: 1
   lifecycle: {fileID: 11400000, guid: 7f3ae3ed0068b7adcbbb8d514d5fad24, type: 2}
+  brakeChannel: {fileID: 11400000, guid: c8d0d194fc311158daa0b7d6517f8025, type: 2}
 --- !u!114 &4188819929873510206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -425,6 +445,8 @@ MonoBehaviour:
   cashBubble: {fileID: 229994890, guid: 0f2e07276a0953227a3b123de9962838, type: 3}
   copBubble: {fileID: 852261636, guid: 0f2e07276a0953227a3b123de9962838, type: 3}
   copCarBubble: {fileID: -1627201512, guid: 0f2e07276a0953227a3b123de9962838, type: 3}
+  policeSightRange: 16
+  policeAlertCooldown: 5
 --- !u!1001 &641835139208096492
 PrefabInstance:
   m_ObjectHideFlags: 0

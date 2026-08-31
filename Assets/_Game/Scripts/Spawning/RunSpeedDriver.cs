@@ -7,6 +7,10 @@ namespace DogSnatcher.Spawning
     /// The one writer of <see cref="RunSpeedChannel"/>. Samples the difficulty curve by distance
     /// and integrates distance forward. Allocation-free.
     ///
+    /// The player can shed a slice of that speed by holding the touch "back" zone / the S key -
+    /// <see cref="PlayerSteering"/> writes <see cref="BrakeChannel"/>, this scales the curve
+    /// speed by up to <see cref="maxBrakeFraction"/>.
+    ///
     /// When the run ends in a crash (<see cref="RunLifecycleChannel"/>) it brakes the run speed
     /// to a stop over <see cref="crashBrakeTime"/> so the whole world glides to a halt rather
     /// than freezing on the spot.
@@ -19,6 +23,13 @@ namespace DogSnatcher.Spawning
 
         [Tooltip("Seconds spent easing from a standstill up to the curve speed at the start of a run.")]
         [SerializeField, Min(0f)] private float launchTime = 0.75f;
+
+        [Header("Player brake")]
+        [Tooltip("Optional. Player brake input (touch back zone / S key).")]
+        [SerializeField] private BrakeChannel brake;
+
+        [Tooltip("Fraction of the curve speed shed at full brake. 0.45 = the bike can drop to 55% of pace.")]
+        [SerializeField, Range(0f, 0.9f)] private float maxBrakeFraction = 0.45f;
 
         [Header("Lifecycle")]
         [Tooltip("Optional. When the run crashes the speed brakes to zero over the time below.")]
@@ -61,6 +72,7 @@ namespace DogSnatcher.Spawning
             float launch = launchTime > 0f ? Mathf.Clamp01(elapsed / launchTime) : 1f;
 
             currentSpeed = target * launch;
+            if (brake != null) currentSpeed *= 1f - brake.Brake01 * maxBrakeFraction;
             speedChannel.Advance(currentSpeed, dt);
         }
     }
