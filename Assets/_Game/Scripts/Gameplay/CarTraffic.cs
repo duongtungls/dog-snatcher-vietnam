@@ -74,6 +74,12 @@ namespace DogSnatcher.Gameplay
         [SerializeField, Min(0.1f)] private float minFollowGap = 2.6f;
         [SerializeField, Min(0f)] private float laneSettleTime = 1.1f;
 
+        [Tooltip("Scan this far ahead for a road-side hazard (wedding tent) and pull into a clear " +
+                 "lane pair while it is still well away - a wide, early berth. A car is slow on " +
+                 "the wheel, so it needs more warning than a bike; crosses the centre line if " +
+                 "every pair on its own side is blocked.")]
+        [SerializeField, Min(1f)] private float staticAvoidLookahead = 38f;
+
         [Header("Pursuit")]
         [SerializeField] private bool forceChase;
         [SerializeField, Min(0.5f)] private float chaseGap = 5f;
@@ -88,12 +94,14 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private int seed = 5001;
 
         private System.Random rng;
+        private RiderFootprint footprint;
         private Encounter encounter;
         private float baseSpeed;
         private float wobblePhase;
         private int leftLane;          // the inner lane of the pair this car straddles
         private float laneTargetX;
         private float laneSettleTimer;
+        private float staticDodgeTimer;          // >0 while swerving clear of a wedding tent - slides faster
         private float lastAheadGap = float.MaxValue;
         private bool wasChasing;
         private ChasePhase chasePhase;
@@ -101,10 +109,10 @@ namespace DogSnatcher.Gameplay
         private void Awake()
         {
             if (visual == null) visual = GetComponentInChildren<RiderBillboardVisual>();
-            if (TryGetComponent(out RiderFootprint fp))
+            if (TryGetComponent(out footprint))
             {
-                bodyHalfWidth = fp.HalfWidth;
-                bodyHalfLength = fp.HalfLength;
+                bodyHalfWidth = footprint.HalfWidth;
+                bodyHalfLength = footprint.HalfLength;
             }
         }
 
@@ -153,6 +161,8 @@ namespace DogSnatcher.Gameplay
             // pass, and until then hold a gap.
             int forwardSign = encounter == Encounter.SameDirection ? 1 : -1;
             laneSettleTimer -= dt;
+            staticDodgeTimer -= dt;
+            if (encounter == Encounter.SameDirection) DodgeStatic();
             RiderFootprint ahead = NearestVehicleAhead(forwardSign, out float gap);
             if (ahead != null && gap < overtakeLookahead)
             {
@@ -168,7 +178,8 @@ namespace DogSnatcher.Gameplay
 
             Vector3 p = transform.localPosition;
             p.z += zStep;
-            p.x = Mathf.MoveTowards(p.x, laneTargetX, laneChangeSpeed * dt);
+            float slide = staticDodgeTimer > 0f ? laneChangeSpeed * 2.8f : laneChangeSpeed;
+            p.x = Mathf.MoveTowards(p.x, laneTargetX, slide * dt);
             transform.localPosition = p;
 
             if (p.z > TopEdgeZ() + edgeMargin || p.z < BottomEdgeZ() - edgeMargin) SpawnNext();
@@ -258,11 +269,13 @@ namespace DogSnatcher.Gameplay
             // Find a straddle position clear of every other vehicle. A car is wide and long, so
             // if the pairs are all busy, back the spawn further off the frame edge rather than
             // stacking two 2-lane bodies on top of each other.
-            for (int attempt = 0; attempt < 8; attempt++)
+            for (int attempt = 0; attempt < 10; attempt++)
             {
                 leftLane = encounter == Encounter.SameDirection ? PickUpPairLeftLane() : PickDownPairLeftLane();
                 laneTargetX = layout.GetLaneBoundaryX(leftLane);
-                if (PathClearAt(laneTargetX, spawnZ)) break;
+                bool inTentPath = encounter == Encounter.SameDirection &&
+                    StaticAvoidance.StaticInLane(layout, laneTargetX, bodyHalfWidth, spawnZ, 10f, staticAvoidLookahead);
+                if (PathClearAt(laneTargetX, spawnZ) && !inTentPath) break;
                 if (attempt >= 3) spawnZ += edgeSign * (bodyHalfLength * 2f + 2f);
             }
 
@@ -320,7 +333,8 @@ namespace DogSnatcher.Gameplay
             for (int i = 0; i < all.Count; i++)
             {
                 var f = all[i];
-                if (f == null || f.transform == transform || f.IsPlayer) continue;
+                // A static block (wedding tent) is DodgeStatic's job - go round it, don't queue.
+                if (f == null || f.transform == transform || f.IsPlayer || f.IsStatic) continue;
 
                 Vector3 c = f.LocalCenter;
                 if (Mathf.Abs(c.x - me.x) > bodyHalfWidth + f.HalfWidth) continue;   // paths clear in X
@@ -331,6 +345,53 @@ namespace DogSnatcher.Gameplay
                 hit = f;
             }
             return hit;
+        }
+
+        /// <summary>
+        /// A wedding tent ahead in this car's path: steer to the nearest clear lane pair through
+        /// <see cref="StaticAvoidance"/> - as many pairs over as it takes, over the centre line
+        /// into the oncoming half when every pair on this side is blocked. Fires from far enough
+        /// out (a car is slow on the wheel) that it reads as an early berth, not a swerve. Once
+        /// past it, eases back to the player-direction pairs.
+        /// </summary>
+        private void DodgeStatic()
+        {
+            if (footprint == null || laneSettleTimer > 0f) return;
+
+            float x = StaticAvoidance.TargetX(layout, footprint, true,
+                                              staticAvoidLookahead, 1, overtakeLookahead + 3f);
+            if (!float.IsNaN(x))
+            {
+                staticDodgeTimer = 1.8f;                        // a car is slow to slide - hold the boost longer
+                if (Mathf.Abs(x - laneTargetX) < 0.05f) return;
+                laneTargetX = x;
+                leftLane = NearestPairLeftLane(x);
+                laneSettleTimer = Mathf.Min(laneSettleTime, 0.4f);
+                return;
+            }
+
+            int lo = layout.FirstUpLane;
+            int hi = layout.FirstUpLane + layout.UpLanePairCount - 1;
+            if (hi < lo || (leftLane >= lo && leftLane <= hi)) return;
+            int home = Mathf.Clamp(leftLane < lo ? leftLane + 1 : leftLane - 1, lo, hi);
+            float hx = layout.GetLaneBoundaryX(home);
+            if (!PathClearAt(hx, transform.localPosition.z)) return;
+            leftLane = home;
+            laneTargetX = hx;
+            laneSettleTimer = laneSettleTime;
+        }
+
+        /// <summary>Left lane of the straddle pair whose painted line is nearest world X.</summary>
+        private int NearestPairLeftLane(float x)
+        {
+            int best = 0;
+            float bestD = float.MaxValue;
+            for (int k = 0; k <= layout.LaneCount - 2; k++)
+            {
+                float d = Mathf.Abs(layout.GetLaneBoundaryX(k) - x);
+                if (d < bestD) { bestD = d; best = k; }
+            }
+            return best;
         }
 
         /// <summary>

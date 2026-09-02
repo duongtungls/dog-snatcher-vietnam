@@ -28,8 +28,14 @@ namespace DogSnatcher.Gameplay
                  "shoved - the car holds its line and its two lanes.")]
         [SerializeField] private bool heavy;
 
+        [Tooltip("A fixed road-side hazard (wedding tent, barrier). It never gives way in a shove, " +
+                 "and traffic reads it through the static-obstacle branch in TrafficRider so it " +
+                 "steers clear well ahead of time. See StaticObstacle.")]
+        [SerializeField] private bool isStatic;
+
         public bool IsPlayer => isPlayer;
         public bool Heavy => heavy;
+        public bool IsStatic => isStatic;
         public float HalfWidth => halfExtents.x;
         public float HalfLength => halfExtents.y;
 
@@ -50,6 +56,13 @@ namespace DogSnatcher.Gameplay
             transform.localPosition = p;
         }
 
+        /// <summary>
+        /// Widen or narrow the footprint across the road. <see cref="StaticObstacle"/> calls this
+        /// so the block it presents to traffic and to the player matches the lanes it covers,
+        /// which are derived from <see cref="Data.RoadLayoutAsset"/> rather than hardcoded.
+        /// </summary>
+        public void SetHalfWidth(float halfWidth) => halfExtents.x = Mathf.Max(0.01f, halfWidth);
+
         private void OnEnable()
         {
             if (!All.Contains(this)) All.Add(this);
@@ -64,6 +77,7 @@ namespace DogSnatcher.Gameplay
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = isPlayer ? Color.red
+                : isStatic ? new Color(1f, 0.35f, 0.15f, 1f)
                 : heavy ? new Color(0.3f, 0.7f, 1f, 1f)
                 : new Color(1f, 0.8f, 0.2f, 1f);
             Matrix4x4 m = transform.parent != null

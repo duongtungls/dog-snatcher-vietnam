@@ -74,6 +74,11 @@ namespace DogSnatcher.Pursuit
         [Tooltip("Seconds to hold a lane after changing it, so a bike doesn't weave every frame.")]
         [SerializeField, Min(0f)] private float laneSettleTime = 0.6f;
 
+        [Tooltip("Scan this far ahead for a road-side hazard (wedding tent) and pull into a clear " +
+                 "lane while it is still well away - a wide, early berth, crossing the centre line " +
+                 "if this side is jammed.")]
+        [SerializeField, Min(1f)] private float staticAvoidLookahead = 30f;
+
         [Header("Pursuit")]
         [Tooltip("Chase the player regardless of Wanted level - for demos / testing before the HeatSystem exists.")]
         [SerializeField] private bool forceChase;
@@ -96,15 +101,19 @@ namespace DogSnatcher.Pursuit
         [SerializeField] private int seed = 12345;
 
         private System.Random rng;
+        private RiderFootprint footprint;
         private Encounter encounter;
         private float baseSpeed;
         private float wobblePhase;
         private int laneIndex;
         private float laneTargetX;
         private float laneSettleTimer;
+        private float staticDodgeTimer;          // >0 while swerving clear of a wedding tent - slides faster
         private float lastAheadGap = float.MaxValue;
         private bool wasChasing;
         private ChasePhase chasePhase;
+
+        private void Awake() => footprint = GetComponent<RiderFootprint>();
 
         private void OnEnable()
         {
@@ -144,6 +153,7 @@ namespace DogSnatcher.Pursuit
             {
                 localRate = cruise - player;
                 MaybeAvoidPlayer();
+                DodgeStatic();
             }
             else
             {
@@ -158,6 +168,7 @@ namespace DogSnatcher.Pursuit
             // and until then hold station a bike-length back rather than climbing into it.
             int forwardSign = encounter == Encounter.SameDirection ? 1 : -1;
             laneSettleTimer -= dt;
+            staticDodgeTimer -= dt;
             RiderFootprint ahead = NearestRiderAhead(forwardSign, out float gap);
             if (ahead != null && gap < overtakeLookahead)
             {
@@ -173,7 +184,8 @@ namespace DogSnatcher.Pursuit
 
             Vector3 p = transform.localPosition;
             p.z += zStep;
-            p.x = Mathf.MoveTowards(p.x, laneTargetX, laneChangeSpeed * dt);
+            float slide = staticDodgeTimer > 0f ? laneChangeSpeed * 2.6f : laneChangeSpeed;
+            p.x = Mathf.MoveTowards(p.x, laneTargetX, slide * dt);
             transform.localPosition = p;
 
             if (p.z > TopEdgeZ() + edgeMargin || p.z < BottomEdgeZ() - edgeMargin) SpawnNext();
@@ -258,11 +270,16 @@ namespace DogSnatcher.Pursuit
             bool fromBehind = encounter == Encounter.SameDirection && baseSpeed > player;
             float spawnZ = fromBehind ? BottomEdgeZ() - edgeMargin : TopEdgeZ() + edgeMargin;
 
-            for (int attempt = 0; attempt < 4; attempt++)
+            for (int attempt = 0; attempt < 6; attempt++)
             {
                 laneIndex = encounter == Encounter.SameDirection ? PickUpLane(PlayerLane()) : PickDownLane();
                 laneTargetX = layout.GetLaneCenterX(laneIndex);
-                if (LaneClearAt(laneTargetX, spawnZ)) break;
+                if (!LaneClearAt(laneTargetX, spawnZ)) continue;
+                if (encounter == Encounter.SameDirection &&
+                    StaticAvoidance.StaticInLane(layout, laneTargetX, layout.LaneWidth * 0.45f,
+                                                 spawnZ, 8f, staticAvoidLookahead))
+                    continue;
+                break;
             }
 
             Vector3 p = transform.localPosition;
@@ -316,7 +333,8 @@ namespace DogSnatcher.Pursuit
             for (int i = 0; i < all.Count; i++)
             {
                 var f = all[i];
-                if (f == null || f.transform == transform || f.IsPlayer) continue;
+                // A static block (wedding tent) is DodgeStatic's job - go round it, don't queue.
+                if (f == null || f.transform == transform || f.IsPlayer || f.IsStatic) continue;
 
                 Vector3 c = f.LocalCenter;
                 // Paths clear in X? Compare footprint half-widths, so a two-lane car ahead
@@ -329,6 +347,38 @@ namespace DogSnatcher.Pursuit
                 hit = f;
             }
             return hit;
+        }
+
+        /// <summary>
+        /// A wedding tent ahead in this patrol's path: steer to the nearest clear lane through
+        /// <see cref="StaticAvoidance"/> - as many lanes over as it takes, across the
+        /// centre line when this side is jammed - from far enough out that it reads as an early
+        /// berth. Once past it, eases back to the player-direction band.
+        /// </summary>
+        private void DodgeStatic()
+        {
+            if (footprint == null || laneSettleTimer > 0f) return;
+
+            float x = StaticAvoidance.TargetX(layout, footprint, false,
+                                              staticAvoidLookahead, 1, overtakeLookahead + 3f);
+            if (!float.IsNaN(x))
+            {
+                staticDodgeTimer = 1.4f;
+                if (Mathf.Abs(x - laneTargetX) < 0.05f) return;
+                laneTargetX = x;
+                laneIndex = layout.NearestLane(x);
+                laneSettleTimer = Mathf.Min(laneSettleTime, 0.3f);
+                return;
+            }
+
+            int lo = layout.FirstUpLane, hi = layout.LaneCount - 1;
+            if (laneIndex >= lo && laneIndex <= hi) return;
+            int home = Mathf.Clamp(laneIndex < lo ? laneIndex + 1 : laneIndex - 1, lo, hi);
+            float hx = layout.GetLaneCenterX(home);
+            if (!LaneClearAt(hx, transform.localPosition.z)) return;
+            laneIndex = home;
+            laneTargetX = hx;
+            laneSettleTimer = laneSettleTime;
         }
 
         /// <summary>

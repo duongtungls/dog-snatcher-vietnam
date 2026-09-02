@@ -10,6 +10,8 @@ namespace DogSnatcher.Gameplay
     ///
     ///  - two ordinary bikes overlapping are pushed apart along their shallowest axis, split
     ///    evenly, clamped to the asphalt and to a small step per frame so it reads as a nudge;
+    ///  - a car holds its line - only the lighter vehicle gives way;
+    ///  - a static hazard (wedding tent) never gives way - whatever overlapped it is shoved off;
     ///  - the player overlapping anything ends the run through <see cref="RunLifecycleChannel"/>.
     ///
     /// The push is transient - a lane-keeping rider steers back to its lane next frame - so this
@@ -55,11 +57,13 @@ namespace DogSnatcher.Gameplay
                         continue;
                     }
 
-                    // A car holds its line; only the lighter vehicle gives way. Two of a kind
-                    // split the correction evenly.
+                    if (a.IsStatic && b.IsStatic) continue;           // two immovables, nothing to do
+
+                    // A static hazard, then a car, holds its line; the other side gives way in
+                    // full. Two of a kind split the correction evenly.
                     float shareA = 0.5f, shareB = 0.5f;
-                    if (a.Heavy && !b.Heavy) { shareA = 0f; shareB = 1f; }
-                    else if (b.Heavy && !a.Heavy) { shareA = 1f; shareB = 0f; }
+                    if (a.IsStatic || (a.Heavy && !b.Heavy)) { shareA = 0f; shareB = 1f; }
+                    else if (b.IsStatic || (b.Heavy && !a.Heavy)) { shareA = 1f; shareB = 0f; }
 
                     if (overlapX <= overlapZ)
                     {

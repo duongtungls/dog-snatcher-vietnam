@@ -15,7 +15,8 @@ namespace DogSnatcher.Gameplay
     ///  - SameDirection: each rider cruises at its own speed drawn from a wide band, plus a slow
     ///    sine wobble, so the street never moves as one block. A bike slower than the player
     ///    enters ahead and falls back; one faster than the player enters from behind and
-    ///    overtakes. Rear-view sprite. Steers to a free lane when the player is in its path.
+    ///    overtakes. Rear-view sprite. Steers to a free lane when the player is in its path, and
+    ///    pulls in early to give a road-side hazard (wedding tent) a wide berth.
     ///  - Oncoming: enters ahead in a left-hand lane driving toward the player, passes by.
     ///    Front-view sprite.
     ///
@@ -73,6 +74,11 @@ namespace DogSnatcher.Gameplay
         [Tooltip("Seconds to hold a lane after changing it, so a bike doesn't weave every frame.")]
         [SerializeField, Min(0f)] private float laneSettleTime = 0.6f;
 
+        [Tooltip("Scan this far ahead for a road-side hazard (wedding tent) and start pulling into " +
+                 "a clear lane while it is still well away - a wide, early berth, not a last-second " +
+                 "swerve. Big enough that the dodge happens before the tent is on screen.")]
+        [SerializeField, Min(1f)] private float staticAvoidLookahead = 30f;
+
         [Tooltip("How far past the visible frame edge to spawn / despawn, metres.")]
         [SerializeField, Min(0f)] private float edgeMargin = 2f;
 
@@ -80,13 +86,17 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private int seed = 2001;
 
         private System.Random rng;
+        private RiderFootprint footprint;
         private Encounter encounter;
         private float baseSpeed;
         private float wobblePhase;
         private int laneIndex;
         private float laneTargetX;
         private float laneSettleTimer;
+        private float staticDodgeTimer;          // >0 while swerving clear of a wedding tent - slides faster
         private float lastAheadGap = float.MaxValue;
+
+        private void Awake() => footprint = GetComponent<RiderFootprint>();
 
         private void OnEnable()
         {
@@ -109,6 +119,7 @@ namespace DogSnatcher.Gameplay
             {
                 localRate = cruise - player;                  // >0 overtakes, <0 falls back
                 MaybeAvoidPlayer();
+                DodgeStatic();
             }
             else
             {
@@ -123,6 +134,7 @@ namespace DogSnatcher.Gameplay
             // and until then hold station a bike-length back rather than climbing into it.
             int forwardSign = encounter == Encounter.SameDirection ? 1 : -1;
             laneSettleTimer -= dt;
+            staticDodgeTimer -= dt;
             RiderFootprint ahead = NearestRiderAhead(forwardSign, out float gap);
             if (ahead != null && gap < overtakeLookahead)
             {
@@ -138,7 +150,8 @@ namespace DogSnatcher.Gameplay
 
             Vector3 p = transform.localPosition;
             p.z += zStep;
-            p.x = Mathf.MoveTowards(p.x, laneTargetX, laneChangeSpeed * dt);
+            float slide = staticDodgeTimer > 0f ? laneChangeSpeed * 2.6f : laneChangeSpeed;
+            p.x = Mathf.MoveTowards(p.x, laneTargetX, slide * dt);
             transform.localPosition = p;
 
             if (p.z > TopEdgeZ() + edgeMargin || p.z < BottomEdgeZ() - edgeMargin) SpawnNext();
@@ -164,13 +177,19 @@ namespace DogSnatcher.Gameplay
             bool fromBehind = encounter == Encounter.SameDirection && baseSpeed > player;
             float spawnZ = fromBehind ? BottomEdgeZ() - edgeMargin : TopEdgeZ() + edgeMargin;
 
-            // Try a few times for a lane that isn't the player's and isn't already occupied by
-            // another rider near the spawn point, so bikes don't stack on top of each other.
-            for (int attempt = 0; attempt < 4; attempt++)
+            // Try a few times for a lane that isn't the player's, isn't already occupied by
+            // another rider near the spawn point, and (same-direction) isn't in a wedding tent's
+            // path - so a bike never appears already boxed against the tent with no room to dodge.
+            for (int attempt = 0; attempt < 6; attempt++)
             {
                 laneIndex = encounter == Encounter.SameDirection ? PickUpLane(PlayerLane()) : PickDownLane();
                 laneTargetX = layout.GetLaneCenterX(laneIndex);
-                if (LaneClearAt(laneTargetX, spawnZ)) break;
+                if (!LaneClearAt(laneTargetX, spawnZ)) continue;
+                if (encounter == Encounter.SameDirection &&
+                    StaticAvoidance.StaticInLane(layout, laneTargetX, layout.LaneWidth * 0.45f,
+                                                 spawnZ, 8f, staticAvoidLookahead))
+                    continue;
+                break;
             }
 
             Vector3 p = transform.localPosition;
@@ -225,7 +244,9 @@ namespace DogSnatcher.Gameplay
             for (int i = 0; i < all.Count; i++)
             {
                 var f = all[i];
-                if (f == null || f.transform == transform || f.IsPlayer) continue;
+                // A static block (wedding tent) is DodgeStatic's job, not the rear-end/follow
+                // logic here - going round it, not queueing behind it.
+                if (f == null || f.transform == transform || f.IsPlayer || f.IsStatic) continue;
 
                 Vector3 c = f.LocalCenter;
                 // Paths clear in X? Compare footprint half-widths, so a two-lane car ahead
@@ -238,6 +259,42 @@ namespace DogSnatcher.Gameplay
                 hit = f;
             }
             return hit;
+        }
+
+        /// <summary>
+        /// A wedding tent (any <see cref="RiderFootprint.IsStatic"/> block) sitting in this bike's
+        /// path a good way ahead: steer to the nearest clear lane - as many lanes over as it
+        /// takes, across the centre line into the oncoming half when this side is jammed - through
+        /// <see cref="StaticAvoidance"/>. Fires from much further out than the follow-gap braking
+        /// in <see cref="Update"/>, so the bike gives the tent a wide, early berth. Once past it,
+        /// eases back to its own side.
+        /// </summary>
+        private void DodgeStatic()
+        {
+            if (footprint == null || laneSettleTimer > 0f) return;
+
+            float x = StaticAvoidance.TargetX(layout, footprint, false,
+                                              staticAvoidLookahead, 1, overtakeLookahead + 3f);
+            if (!float.IsNaN(x))
+            {
+                staticDodgeTimer = 1.4f;                        // slide faster until clear
+                if (Mathf.Abs(x - laneTargetX) < 0.05f) return;
+                laneTargetX = x;
+                laneIndex = layout.NearestLane(x);
+                laneSettleTimer = Mathf.Min(laneSettleTime, 0.3f);   // re-check often while a tent is near
+                return;
+            }
+
+            // Nothing to dodge - if a past dodge left us out of the player-direction band, step
+            // one lane back toward it whenever that lane is clear.
+            int lo = layout.FirstUpLane, hi = layout.LaneCount - 1;
+            if (laneIndex >= lo && laneIndex <= hi) return;
+            int home = Mathf.Clamp(laneIndex < lo ? laneIndex + 1 : laneIndex - 1, lo, hi);
+            float hx = layout.GetLaneCenterX(home);
+            if (!LaneClearAt(hx, transform.localPosition.z)) return;
+            laneIndex = home;
+            laneTargetX = hx;
+            laneSettleTimer = laneSettleTime;
         }
 
         /// <summary>
