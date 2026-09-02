@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c80507cd597931a0a8427c46c0694b4, type: 3}
+  m_Name: StreetSignSet
+  m_EditorClassIdentifier: 
+  signs:
+  - {fileID: 629884461, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 969115633, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1124752020, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -285785119, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -449309849, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -622878220, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 948576507, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 268842315, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1553055952, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 627351907, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 584889527, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1937311287, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 968104577, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1238480911, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1545795179, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1018471127, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -206456624, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -64270654, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 110273945, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1808776452, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1219885867, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1736375621, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1825823168, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1980767613, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 787852207, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -40315365, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 1307890980, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: -1167734016, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  - {fileID: 194070768, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  leftOnly:
+  - {fileID: 629884461, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  rightOnly:
+  - {fileID: 969115633, guid: 445b9803a6c52d97a9a6c0ce9f6a51cc, type: 3}
+  tallAspect: 1
+  wideAspect: 0.8
