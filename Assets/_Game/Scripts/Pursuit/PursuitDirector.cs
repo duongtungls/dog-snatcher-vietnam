@@ -90,23 +90,29 @@ namespace DogSnatcher.Pursuit
         {
             if (wanted == null) return;
 
-            bool watched = IsWatched();
+            PoliceThreat witness = FindWitness();
             bool alreadyWanted = wanted.CurrentStars > 0;
 
-            if (!watched && !alreadyWanted) return;   // clean getaway, nobody the wiser
+            if (witness == null && !alreadyWanted) return;   // clean getaway, nobody the wiser
 
-            if (watched)
+            if (witness != null)
+            {
                 wanted.SetStars(Mathf.Min(wanted.CurrentStars + 1, maxStars));
+                witness.SawTheCrime = true;                   // the cop who saw it leads the chase (PursuitSpread)
+            }
 
             // any snatch while things are hot keeps the pursuit alive
             calmLeft = calmSeconds;
             wanted.SetHeat(1f);
         }
 
-        private bool IsWatched()
+        /// <summary>The nearest cop that could have seen this snatch, or null.</summary>
+        private PoliceThreat FindWitness()
         {
             Vector3 me = transform.localPosition;
             var all = PoliceThreat.All;
+            PoliceThreat best = null;
+            float bestSqr = float.MaxValue;
             for (int i = 0; i < all.Count; i++)
             {
                 var pt = all[i];
@@ -114,9 +120,10 @@ namespace DogSnatcher.Pursuit
 
                 Vector3 d = pt.LocalCenter - me;                 // d.z > 0 : cop is ahead of the rider
                 float range = d.z >= 0f ? witnessRangeAhead : witnessRangeBehind;
-                if (d.x * d.x + d.z * d.z <= range * range) return true;
+                float sqr = d.x * d.x + d.z * d.z;
+                if (sqr <= range * range && sqr < bestSqr) { bestSqr = sqr; best = pt; }
             }
-            return false;
+            return best;
         }
     }
 }

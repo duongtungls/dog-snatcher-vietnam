@@ -1,4 +1,5 @@
 using DogSnatcher.Data;
+using DogSnatcher.Pursuit;
 using UnityEngine;
 
 namespace DogSnatcher.Gameplay
@@ -82,6 +83,10 @@ namespace DogSnatcher.Gameplay
 
         [Header("Pursuit")]
         [SerializeField] private bool forceChase;
+
+        [Tooltip("A chasing cop within this many metres (local Z) shouts this car into the chase " +
+                 "once the player has passed it - the no-radio word-of-mouth spread.")]
+        [SerializeField, Min(0.5f)] private float recruitRange = 4f;
         [SerializeField, Min(0.5f)] private float chaseGap = 5f;
         [SerializeField, Min(0.1f)] private float chaseSideSpeed = 5f;
         [SerializeField, Min(0.1f)] private float chaseCloseSpeed = 8f;
@@ -95,6 +100,7 @@ namespace DogSnatcher.Gameplay
 
         private System.Random rng;
         private RiderFootprint footprint;
+        private PoliceThreat threat;
         private Encounter encounter;
         private float baseSpeed;
         private float wobblePhase;
@@ -103,12 +109,15 @@ namespace DogSnatcher.Gameplay
         private float laneSettleTimer;
         private float staticDodgeTimer;          // >0 while swerving clear of a wedding tent - slides faster
         private float lastAheadGap = float.MaxValue;
+        private bool isChaser;                   // word-of-mouth pursuit state, see PursuitSpread
+        private bool heatWasUp;
         private bool wasChasing;
         private ChasePhase chasePhase;
 
         private void Awake()
         {
             if (visual == null) visual = GetComponentInChildren<RiderBillboardVisual>();
+            TryGetComponent(out threat);
             if (TryGetComponent(out footprint))
             {
                 bodyHalfWidth = footprint.HalfWidth;
@@ -128,8 +137,25 @@ namespace DogSnatcher.Gameplay
 
             float dt = Time.deltaTime;
 
-            bool chasing = forceChase || (wantedLevel != null && wantedLevel.CurrentStars > 0);
-            if (chasing)
+            bool heatUp = forceChase || (wantedLevel != null && wantedLevel.CurrentStars > 0);
+            bool heatJustRose = heatUp && !heatWasUp;
+            heatWasUp = heatUp;
+
+            if (!heatUp)
+            {
+                isChaser = false;
+                if (threat != null) { threat.IsChaser = false; threat.SawTheCrime = false; }
+            }
+            else if (!isChaser)
+            {
+                float pz = playerTransform != null ? playerTransform.localPosition.z : 0f;
+                if (forceChase || PursuitSpread.ShouldChase(threat, transform.localPosition.z, pz,
+                                                            true, heatJustRose, recruitRange))
+                    isChaser = true;
+            }
+            if (isChaser && threat != null) threat.IsChaser = true;
+
+            if (isChaser)
             {
                 if (!wasChasing)
                 {
