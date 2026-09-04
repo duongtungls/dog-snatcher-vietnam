@@ -389,9 +389,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d926b21d71b50955b935d75964b370f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 30afc0a65e4a4004a9937af9af4b9a56, type: 3}
+  clip: {fileID: 8300000, guid: 16dfdae6f4e45eeab85a53f285f7718d, type: 3}
   volume: 0.55
   fadeSeconds: 1.2
+  wanted: {fileID: 0}
+  chaseClip: {fileID: 0}
+  chaseFadeSeconds: 0.6
 --- !u!4 &184882105
 Transform:
   m_ObjectHideFlags: 0

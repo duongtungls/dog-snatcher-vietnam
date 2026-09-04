@@ -62,8 +62,12 @@ namespace DogSnatcher.Audio
             active = a;
         }
 
-        /// <summary>Play, or crossfade to, a music clip. The same clip already playing is a no-op
-        /// beyond retargeting the volume.</summary>
+        /// <summary>
+        /// Play, or crossfade to, a music clip. The clip already playing (or already being faded
+        /// in) is a no-op beyond retargeting the volume. Asking for the track that is still fading
+        /// <i>out</i> - a chase that ends before the crossfade finished - brings that source back
+        /// up instead of restarting the track.
+        /// </summary>
         public void Play(AudioClip clip, float volume, float fadeSeconds = 1.2f)
         {
             targetVolume = Mathf.Clamp01(volume);
@@ -76,17 +80,21 @@ namespace DogSnatcher.Audio
                 return;
             }
 
-            if (clip == currentClip && active != null && active.isPlaying)
+            if (clip == currentClip)
             {
-                if (fade == null) active.volume = targetVolume;
+                if (fade == null && active != null) active.volume = targetVolume;
                 return;
             }
 
             currentClip = clip;
-            var next = active == a ? b : a;
-            next.clip = clip;
-            next.volume = 0f;
-            next.Play();
+            AudioSource next = SourcePlaying(clip);
+            if (next == null)
+            {
+                next = active == a ? b : a;
+                next.clip = clip;
+                next.volume = 0f;
+                next.Play();
+            }
             StartFade(next);
         }
 
@@ -98,6 +106,13 @@ namespace DogSnatcher.Audio
             StartFade(null);
         }
 
+        private AudioSource SourcePlaying(AudioClip clip)
+        {
+            if (a.clip == clip && a.isPlaying) return a;
+            if (b.clip == clip && b.isPlaying) return b;
+            return null;
+        }
+
         private void StartFade(AudioSource next)
         {
             if (fade != null) StopCoroutine(fade);
@@ -106,29 +121,28 @@ namespace DogSnatcher.Audio
 
         private IEnumerator FadeRoutine(AudioSource next)
         {
-            var from = active;
-            float fromStart = from != null ? from.volume : 0f;
+            // Everything that is not 'next' fades out from wherever it is; 'next' fades in from
+            // wherever it is (0 for a fresh track, part-way for one being brought back).
+            float aStart = a.volume;
+            float bStart = b.volume;
+            float aEnd = next == a ? targetVolume : 0f;
+            float bEnd = next == b ? targetVolume : 0f;
 
             float t = 0f;
             while (t < fadeTime)
             {
                 t += Time.unscaledDeltaTime;
                 float k = Mathf.Clamp01(t / fadeTime);
-                if (from != null && from != next) from.volume = Mathf.Lerp(fromStart, 0f, k);
-                if (next != null) next.volume = Mathf.Lerp(0f, targetVolume, k);
+                a.volume = Mathf.Lerp(aStart, aEnd, k);
+                b.volume = Mathf.Lerp(bStart, bEnd, k);
                 yield return null;
             }
 
-            if (from != null && from != next)
-            {
-                from.volume = 0f;
-                from.Stop();
-            }
-            if (next != null)
-            {
-                next.volume = targetVolume;
-                active = next;
-            }
+            a.volume = aEnd;
+            b.volume = bEnd;
+            if (next != a) a.Stop();
+            if (next != b) b.Stop();
+            if (next != null) active = next;
             fade = null;
         }
     }
