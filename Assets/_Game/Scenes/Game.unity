@@ -248,6 +248,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 344750756}
     m_Modifications:
+    - target: {fileID: 2159720756508612282, guid: 7a9e8db44e79d8e66942fa4a04aaf3cb, type: 3}
+      propertyPath: leftStrip
+      value: 
+      objectReference: {fileID: 1127077893}
+    - target: {fileID: 2159720756508612282, guid: 7a9e8db44e79d8e66942fa4a04aaf3cb, type: 3}
+      propertyPath: rightStrip
+      value: 
+      objectReference: {fileID: 1829935854}
     - target: {fileID: 5770461882264309419, guid: 7a9e8db44e79d8e66942fa4a04aaf3cb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -331,9 +339,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d926b21d71b50955b935d75964b370f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clip: {fileID: 8300000, guid: 30afc0a65e4a4004a9937af9af4b9a56, type: 3}
+  clip: {fileID: 8300000, guid: ec7d059dd9d634d538288dfdf5bc65cb, type: 3}
   volume: 0.55
   fadeSeconds: 1.2
+  wanted: {fileID: 11400000, guid: 681e214c5d9af88d3b21733609dd5585, type: 2}
+  chaseClip: {fileID: 8300000, guid: cb597e3e8d32e85a0b76f5eb71f4954b, type: 3}
+  chaseFadeSeconds: 0.6
 --- !u!4 &184882105
 Transform:
   m_ObjectHideFlags: 0
@@ -6278,6 +6289,7 @@ MonoBehaviour:
   laneSettleTime: 0.6
   staticAvoidLookahead: 30
   forceChase: 0
+  recruitRange: 4
   chaseGap: 3.5
   chaseSideSpeed: 6
   chaseCloseSpeed: 7

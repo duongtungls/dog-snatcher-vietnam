@@ -63,6 +63,19 @@ namespace DogSnatcher.Spawning
         /// <summary>World-space width of this strip.</summary>
         public float StripWidth { get; private set; }
 
+        /// <summary>Metres one repeat of the texture spans along +Z (strip width x texture aspect).</summary>
+        public float RepeatWorldLength => repeatWorldLength;
+
+        /// <summary>Scroll factor relative to the road - see the inspector field.</summary>
+        public float Parallax => parallax;
+
+        /// <summary>
+        /// World point of the texture's V = 0 edge (the quad's bottom-centre) at run distance 0.
+        /// The UV scroll then carries the texture origin toward -Z by distance * parallax, so
+        /// anything that has to stay glued to the painted art can seat itself off this.
+        /// </summary>
+        public Vector3 TextureOriginWorld => transform.TransformPoint(new Vector3(0f, -0.5f, 0f));
+
         private void Awake() => CacheRefs();
 
         private void OnEnable()
