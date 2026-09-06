@@ -1,4 +1,5 @@
 using DogSnatcher.Data;
+using DogSnatcher.Pursuit;
 using UnityEngine;
 
 namespace DogSnatcher.Gameplay
@@ -23,6 +24,8 @@ namespace DogSnatcher.Gameplay
     {
         [SerializeField] private RoadLayoutAsset layout;
         [SerializeField] private RunLifecycleChannel lifecycle;
+        [Tooltip("Read to check whether the player is currently being chased - a wanted player who crashes is always arrested, regardless of what they hit.")]
+        [SerializeField] private WantedLevelChannel wanted;
 
         [Tooltip("Most a bike can be shoved in one frame, metres - keeps a shove from teleporting.")]
         [SerializeField, Min(0.01f)] private float maxStepPerFrame = 0.5f;
@@ -53,7 +56,11 @@ namespace DogSnatcher.Gameplay
 
                     if (a.IsPlayer || b.IsPlayer)
                     {
-                        if (lifecycle != null) lifecycle.Crash();
+                        if (lifecycle != null)
+                        {
+                            var other = a.IsPlayer ? b : a;
+                            lifecycle.Crash(ClassifyCrash(other));
+                        }
                         continue;
                     }
 
@@ -81,6 +88,22 @@ namespace DogSnatcher.Gameplay
                     }
                 }
             }
+        }
+
+        /// <summary>Picks a game-over card (GDD §0's comedic-karma copy, baked into the card art)
+        /// for the crash that just ended the run. Being actively wanted overrides everything else:
+        /// once a snatch has drawn heat, whatever knocks the player down - a civilian, a car, the
+        /// wedding tent, even the Ninja Lead rider - reads narratively as the police catching up,
+        /// so it's always Police Arrested. Without any stars up, a direct hit on a police unit is
+        /// still Police Arrested (e.g. plowing into an ambient patrol car before ever snatching a
+        /// dog). Ninja Lead only applies when neither of those hold, and ordinary traffic is the
+        /// fallback.</summary>
+        private RunLifecycleChannel.CrashCause ClassifyCrash(RiderFootprint other)
+        {
+            if ((wanted != null && wanted.CurrentStars > 0) || other.TryGetComponent<PoliceThreat>(out _))
+                return RunLifecycleChannel.CrashCause.PoliceArrested;
+            if (other.TryGetComponent<NinjaLeadRider>(out _)) return RunLifecycleChannel.CrashCause.NinjaLead;
+            return RunLifecycleChannel.CrashCause.NormalCrash;
         }
 
         private float ClampX(RiderFootprint r, float x)

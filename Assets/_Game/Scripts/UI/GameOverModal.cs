@@ -9,7 +9,8 @@ namespace DogSnatcher.UI
     /// The "you got caught" modal. Listens for <see cref="RunLifecycleChannel.Crashed"/>, waits
     /// for the world to coast to a stop, then fades in a backdrop + card with a single Repeat
     /// button that reloads the run. GDD §0: every run ends in getting caught and the copy is
-    /// comedic karma - the wording lives in the string table, not here.
+    /// comedic karma - the wording is baked into the card art, picked per
+    /// <see cref="RunLifecycleChannel.CrashCause"/> so the joke matches what actually happened.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GameOverModal : MonoBehaviour
@@ -19,14 +20,12 @@ namespace DogSnatcher.UI
         [Tooltip("Optional - cleared to 0 stars on restart so the next run starts calm.")]
         [SerializeField] private WantedLevelChannel wantedLevel;
 
-        [Header("Text")]
-        [SerializeField] private StringTableAsset strings;
-        [SerializeField] private string titleKey = "gameover.title";
-        [SerializeField] private string subtitleKey = "gameover.subtitle";
-        [SerializeField] private string repeatKey = "gameover.repeat";
-        [SerializeField] private Text titleLabel;
-        [SerializeField] private Text subtitleLabel;
-        [SerializeField] private Text repeatLabel;
+        [Header("Case artwork")]
+        [Tooltip("Full-card image - swapped per crash cause before the panel is revealed.")]
+        [SerializeField] private Image caseArtwork;
+        [SerializeField] private Sprite normalCrashSprite;
+        [SerializeField] private Sprite policeArrestedSprite;
+        [SerializeField] private Sprite ninjaLeadSprite;
 
         [Header("Refs")]
         [Tooltip("Root object shown/hidden - the backdrop + card.")]
@@ -42,12 +41,12 @@ namespace DogSnatcher.UI
         private bool pending;
         private float revealAt;
         private float fade;
+        private bool checkedInitialCrash;
 
         private void Awake()
         {
             if (panel != null) panel.SetActive(false);
             if (canvasGroup != null) canvasGroup.alpha = 0f;
-            ApplyStrings();
             if (repeatButton != null)
             {
                 repeatButton.onClick.RemoveListener(Restart);
@@ -57,9 +56,15 @@ namespace DogSnatcher.UI
 
         private void OnEnable()
         {
+            checkedInitialCrash = false;
             if (lifecycle == null) return;
             lifecycle.Crashed += HandleCrash;
-            if (lifecycle.IsCrashed) HandleCrash();   // already crashed before this woke up
+            // Don't read lifecycle.IsCrashed here: RunLifecycleChannel's [NonSerialized] crash
+            // flag survives a scene reload / editor playmode exit (it's an asset, not a scene
+            // object), and RunSpeedDriver.OnEnable is the one that clears it for the new run -
+            // but MonoBehaviour OnEnable order between the two isn't guaranteed, so reading it
+            // here could catch it a frame too early and show BUSTED! on a run that never
+            // crashed. Unity runs every OnEnable before the first Update, so check there instead.
         }
 
         private void OnDisable()
@@ -76,9 +81,16 @@ namespace DogSnatcher.UI
 
         private void Update()
         {
+            if (!checkedInitialCrash)
+            {
+                checkedInitialCrash = true;
+                if (lifecycle != null && lifecycle.IsCrashed) HandleCrash();   // already crashed before this woke up
+            }
+
             if (pending && Time.unscaledTime >= revealAt)
             {
                 pending = false;
+                ApplyCaseArtwork();
                 if (panel != null) panel.SetActive(true);
             }
 
@@ -89,12 +101,15 @@ namespace DogSnatcher.UI
             }
         }
 
-        private void ApplyStrings()
+        private void ApplyCaseArtwork()
         {
-            if (strings == null) return;
-            if (titleLabel != null) titleLabel.text = strings.Get(titleKey);
-            if (subtitleLabel != null) subtitleLabel.text = strings.Get(subtitleKey);
-            if (repeatLabel != null) repeatLabel.text = strings.Get(repeatKey);
+            if (caseArtwork == null || lifecycle == null) return;
+            caseArtwork.sprite = lifecycle.Cause switch
+            {
+                RunLifecycleChannel.CrashCause.PoliceArrested => policeArrestedSprite,
+                RunLifecycleChannel.CrashCause.NinjaLead => ninjaLeadSprite,
+                _ => normalCrashSprite,
+            };
         }
 
         /// <summary>Repeat button. Clears the run state and reloads the scene from scratch.</summary>

@@ -15,21 +15,37 @@ namespace DogSnatcher.Data
     [CreateAssetMenu(menuName = "Dog Snatcher/Run Lifecycle Channel", fileName = "RunLifecycle")]
     public sealed class RunLifecycleChannel : ScriptableObject
     {
+        /// <summary>What the player crashed into - the GameOverModal picks its card art from this.</summary>
+        public enum CrashCause { NormalCrash, PoliceArrested, NinjaLead }
+
         [NonSerialized] private bool crashed;
+        [NonSerialized] private CrashCause cause;
 
         /// <summary>True once the player has hit another bike this run.</summary>
         public bool IsCrashed => crashed;
 
+        /// <summary>What caused the crash - only meaningful once <see cref="IsCrashed"/> is true.</summary>
+        public CrashCause Cause => cause;
+
         /// <summary>Raised once, the frame the run ends in a crash.</summary>
         public event Action Crashed;
 
-        private void OnEnable() => crashed = false;
+        private void OnEnable()
+        {
+            crashed = false;
+            cause = CrashCause.NormalCrash;
+        }
 
-        public void ResetRun() => crashed = false;
+        public void ResetRun()
+        {
+            crashed = false;
+            cause = CrashCause.NormalCrash;
+        }
 
-        public void Crash()
+        public void Crash(CrashCause crashCause)
         {
             if (crashed) return;
+            cause = crashCause;
             crashed = true;
             Crashed?.Invoke();
         }
