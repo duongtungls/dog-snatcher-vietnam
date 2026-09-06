@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9179e20034ccfd149ab5508449d4217e, type: 3}
+  m_Name: TimeOfDay_Night
+  m_EditorClassIdentifier: 
+  displayName: Night
+  ambientColor: {r: 0.55, g: 0.62, b: 0.9, a: 1}
+  ambientIntensity: 0.62
+  groundTint: {r: 0.17, g: 0.19, b: 0.3, a: 1}
+  skyColor: {r: 0.025, g: 0.03, b: 0.06, a: 1}
+  headlightsOn: 1

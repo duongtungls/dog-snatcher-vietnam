@@ -19,6 +19,10 @@ namespace DogSnatcher.Gameplay
 
         private SpriteRenderer spriteRenderer;
 
+        /// <summary>True while showing the rear view (travelling away, up the screen). Read by
+        /// <see cref="VehicleHeadlights"/> to point the head/tail glow the right way.</summary>
+        public bool IsFacingUp { get; private set; } = true;
+
         private void Awake() => Cache();
         private void OnEnable() { Cache(); FaceUp(); }
 
@@ -30,12 +34,14 @@ namespace DogSnatcher.Gameplay
         public void FaceUp()
         {
             Cache();
+            IsFacingUp = true;
             if (upSprite != null) spriteRenderer.sprite = upSprite;
         }
 
         public void FaceDown()
         {
             Cache();
+            IsFacingUp = false;
             if (downSprite != null) spriteRenderer.sprite = downSprite;
         }
     }
