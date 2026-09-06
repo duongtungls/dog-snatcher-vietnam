@@ -12,6 +12,9 @@ namespace DogSnatcher.Audio
     /// <see cref="SceneMusic"/> component naming its track. Fades run on unscaled time so a
     /// pause doesn't stall them, and the sources ignore listener pause so the music carries on.
     /// The only allocation is one coroutine per track change.
+    ///
+    /// <see cref="MasterMusicVolume"/> is the Options-modal MUSIC slider (0..1). It scales
+    /// whatever volume a scene asks for; the initial value comes from <see cref="AudioPrefs"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MusicDirector : MonoBehaviour
@@ -36,9 +39,14 @@ namespace DogSnatcher.Audio
         private AudioSource b;
         private AudioSource active;
         private AudioClip currentClip;
-        private float targetVolume = 1f;
+        private float sceneVolume = 1f;    // the volume the current scene asked for
+        private float masterMusicVolume = 1f;
+        private float targetVolume = 1f;   // sceneVolume * masterMusicVolume
         private float fadeTime = 1.2f;
         private Coroutine fade;
+
+        /// <summary>The Options-modal MUSIC slider, 0..1. Scales every scene's requested volume.</summary>
+        public float MasterMusicVolume => masterMusicVolume;
 
         private void Awake()
         {
@@ -48,6 +56,7 @@ namespace DogSnatcher.Audio
                 return;
             }
             instance = this;
+            masterMusicVolume = AudioPrefs.Music;
 
             a = gameObject.AddComponent<AudioSource>();
             b = gameObject.AddComponent<AudioSource>();
@@ -70,7 +79,8 @@ namespace DogSnatcher.Audio
         /// </summary>
         public void Play(AudioClip clip, float volume, float fadeSeconds = 1.2f)
         {
-            targetVolume = Mathf.Clamp01(volume);
+            sceneVolume = Mathf.Clamp01(volume);
+            targetVolume = sceneVolume * masterMusicVolume;
             fadeTime = Mathf.Max(0.01f, fadeSeconds);
 
             if (clip == null)
@@ -104,6 +114,17 @@ namespace DogSnatcher.Audio
             fadeTime = Mathf.Max(0.01f, fadeSeconds);
             currentClip = null;
             StartFade(null);
+        }
+
+        /// <summary>
+        /// Set the MUSIC slider level (0..1). Applies immediately - live while the slider drags
+        /// in the Options modal - without disturbing an in-flight crossfade.
+        /// </summary>
+        public void SetMasterMusicVolume(float value)
+        {
+            masterMusicVolume = Mathf.Clamp01(value);
+            targetVolume = sceneVolume * masterMusicVolume;
+            if (fade == null && active != null && active.isPlaying) active.volume = targetVolume;
         }
 
         private AudioSource SourcePlaying(AudioClip clip)

@@ -47,3 +47,36 @@ MonoBehaviour:
     text: BACK
   - key: menu.comingSoon
     text: COMING SOON
+  - key: options.title
+    text: OPTIONS
+  - key: options.sound
+    text: SOUND
+  - key: options.music
+    text: MUSIC
+  - key: options.saved
+    text: SAVED!
+  - key: credits.title
+    text: CREDITS
+  - key: credits.body
+    text: 'DOG SNATCHER: VIETNAM
+
+
+      A satirical endless runner.
+
+      No dogs
+      were harmed in the making
+
+      of this game - only returned home.
+
+
+      Design,
+      code & art
+
+      Duong Tung
+
+
+      Made with Unity
+
+
+      Thank you for
+      playing.'
