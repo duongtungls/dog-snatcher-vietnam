@@ -10,9 +10,11 @@ namespace DogSnatcher.Gameplay
     ///  - Switches the whole rig off in daylight and on at night, from
     ///    <see cref="TimeOfDayChannel"/>. A run is day by default, so most runs this stays dark.
     ///  - The billboards never rotate - travel direction is carried only by which sprite pose is
-    ///    showing - so it flips the rig 180° about X when the visual turns to face the camera,
-    ///    swapping the head and tail ends. Player-direction traffic never faces the camera, so
-    ///    that path is usually idle; it only matters for oncoming traffic and a peeling-off cop.
+    ///    showing - so it spins the rig 180° about Y when the visual turns to face the camera,
+    ///    swapping the head and tail ends. About Y, not X: the glow sprites sit a hair above the
+    ///    asphalt to avoid z-fighting, and an X-flip would drive that offset below the road so
+    ///    oncoming traffic showed no headlight. Player-direction traffic never faces the camera,
+    ///    so that path is usually idle; it only matters for oncoming traffic and a peeling-off cop.
     ///
     /// Put this on the rig GameObject whose children are the glow sprites / lamp. Allocation-free.
     /// </summary>
@@ -26,7 +28,7 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private RiderBillboardVisual riderVisual;
         [SerializeField] private PoliceCharacterVisual policeVisual;
 
-        private static readonly Quaternion Flipped = Quaternion.Euler(180f, 0f, 0f);
+        private static readonly Quaternion Flipped = Quaternion.Euler(0f, 180f, 0f);
 
         private bool facingUp = true;
         private bool lit;
