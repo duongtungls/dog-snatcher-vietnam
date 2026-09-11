@@ -5,10 +5,15 @@ namespace DogSnatcher.UI
 {
     /// <summary>
     /// Avatar + display-name entry, the last step before a row lands on the leaderboard. The
-    /// avatar row is a small fixed pool (see <see cref="avatarFrames"/>/<see cref="avatarButtons"/>,
-    /// built from existing dog character art per CLAUDE.md's art-reuse rule) rather than a
-    /// scrollable picker. On LET'S GO the entry is written via <see cref="LeaderboardStore"/> and
-    /// control returns to <see cref="leaderboardModal"/>, refreshed to show the new own-row.
+    /// avatar picker is a scrollable grid (see <see cref="avatarFrames"/>/<see cref="avatarButtons"/>,
+    /// one Image/Button pair per slot in a ScrollRect-backed Content) fed by the real distinct
+    /// avatar art under Art/UI/JoinLeaderboard/Avatars/ - array order must match the grid's
+    /// reading order (top-left to bottom-right) since <see cref="SelectAvatar"/> and
+    /// <see cref="RandomizeAvatar"/> both index straight into these arrays. Whichever way the
+    /// selection changes, <see cref="avatarScrollRect"/> snaps to keep the selected slot visible -
+    /// RANDOM AVATAR can otherwise land on a slot the player has scrolled past. On LET'S GO the
+    /// entry is written via <see cref="LeaderboardStore"/> and control returns to
+    /// <see cref="leaderboardModal"/>, refreshed to show the new own-row.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class JoinLeaderboardModal : MonoBehaviour
@@ -21,6 +26,8 @@ namespace DogSnatcher.UI
         [SerializeField] private Button[] avatarButtons = System.Array.Empty<Button>();
         [SerializeField] private Sprite avatarFrameNormal;
         [SerializeField] private Sprite avatarFrameSelected;
+        [Tooltip("The avatar grid's ScrollRect - snapped so the selected slot is always visible.")]
+        [SerializeField] private ScrollRect avatarScrollRect;
 
         [Header("Random avatar")]
         [SerializeField] private Button randomAvatarButton;
@@ -55,24 +62,27 @@ namespace DogSnatcher.UI
 
         private void OnEnable()
         {
-            selectedAvatarIndex = 0;
             if (nameInput != null) nameInput.text = string.Empty;
             HideValidation();
-            RefreshAvatarSelection();
+            SetSelectedAvatar(0);
         }
 
-        public void SelectAvatar(int index)
-        {
-            selectedAvatarIndex = index;
-            RefreshAvatarSelection();
-        }
+        public void SelectAvatar(int index) => SetSelectedAvatar(index);
 
         /// <summary>RANDOM AVATAR - menu-only roll, outside the run loop's 0-alloc budget.</summary>
         public void RandomizeAvatar()
         {
             if (avatarButtons.Length == 0) return;
-            selectedAvatarIndex = Random.Range(0, avatarButtons.Length);
+            SetSelectedAvatar(Random.Range(0, avatarButtons.Length));
+        }
+
+        /// <summary>Single place both manual taps and the random roll go through - repaints the
+        /// frame highlight and snaps the grid to keep the pick visible.</summary>
+        private void SetSelectedAvatar(int index)
+        {
+            selectedAvatarIndex = index;
             RefreshAvatarSelection();
+            ScrollSelectedIntoView();
         }
 
         /// <summary>LET'S GO - validate the name and submit the player's own leaderboard row.</summary>
@@ -110,6 +120,41 @@ namespace DogSnatcher.UI
                 if (avatarFrames[i] == null) continue;
                 avatarFrames[i].sprite = i == selectedAvatarIndex ? avatarFrameSelected : avatarFrameNormal;
             }
+        }
+
+        /// <summary>
+        /// Instant snap (no easing/coroutine) that nudges the grid's Content just far enough to
+        /// bring the selected slot fully inside the viewport - a no-op when it's already visible.
+        /// Reads the slot's own RectTransform rather than re-deriving row/column math, so it stays
+        /// correct regardless of how the grid was laid out.
+        /// </summary>
+        private void ScrollSelectedIntoView()
+        {
+            if (avatarScrollRect == null) return;
+            if (selectedAvatarIndex < 0 || selectedAvatarIndex >= avatarFrames.Length) return;
+            var slot = avatarFrames[selectedAvatarIndex];
+            var content = avatarScrollRect.content;
+            var viewport = avatarScrollRect.viewport;
+            if (slot == null || content == null || viewport == null) return;
+
+            RectTransform slotRect = slot.rectTransform;
+            float viewportHeight = viewport.rect.height;
+            float slotTop = -slotRect.anchoredPosition.y;            // distance from Content's top edge to the slot's top edge
+            float slotBottom = slotTop + slotRect.rect.height;       // distance from Content's top edge to the slot's bottom edge
+            float maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
+            float currentScroll = content.anchoredPosition.y;
+
+            float targetScroll = currentScroll;
+            if (currentScroll > slotTop)
+                targetScroll = slotTop;                              // slot scrolled above the viewport - pull it back down
+            else if (currentScroll < slotBottom - viewportHeight)
+                targetScroll = slotBottom - viewportHeight;          // slot below the viewport - push it up
+
+            targetScroll = Mathf.Clamp(targetScroll, 0f, maxScroll);
+            if (Mathf.Approximately(targetScroll, currentScroll)) return;
+
+            content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetScroll);
+            avatarScrollRect.velocity = Vector2.zero;
         }
 
         private void ShowValidation()

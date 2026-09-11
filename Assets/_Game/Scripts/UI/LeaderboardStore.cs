@@ -31,18 +31,26 @@ namespace DogSnatcher.UI
             SeedMockEntries();
         }
 
-        /// <summary>Comedic, English-only mock roster - regenerated fresh every session, never persisted.</summary>
+        /// <summary>Comedic, English-only mock roster - regenerated fresh every session, never
+        /// persisted. AvatarIndex spans the real 0-89 <see cref="AvatarCatalog"/> range (not just
+        /// the old 3-avatar placeholder scheme) so the row list shows varied faces.</summary>
         private void SeedMockEntries()
         {
             mockEntries.Clear();
-            mockEntries.Add(new LeaderboardEntry("MotoNinja99", 0, 42, 980));
-            mockEntries.Add(new LeaderboardEntry("NightRider_HN", 1, 37, 1120));
-            mockEntries.Add(new LeaderboardEntry("AlleyCatBoss", 2, 29, 640));
-            mockEntries.Add(new LeaderboardEntry("DogWhispererVN", 0, 25, 505));
-            mockEntries.Add(new LeaderboardEntry("MidnightHauler", 1, 18, 300));
-            mockEntries.Add(new LeaderboardEntry("CrateFullOfChaos", 2, 14, 260));
-            mockEntries.Add(new LeaderboardEntry("SirenDodger", 0, 9, 150));
-            mockEntries.Add(new LeaderboardEntry("TwoStrokeBandit", 1, 4, 60));
+            mockEntries.Add(new LeaderboardEntry("MotoNinja99", 4, 42, 980));
+            mockEntries.Add(new LeaderboardEntry("NightRider_HN", 17, 37, 1120));
+            mockEntries.Add(new LeaderboardEntry("AlleyCatBoss", 29, 29, 640));
+            mockEntries.Add(new LeaderboardEntry("DogWhispererVN", 38, 25, 505));
+            mockEntries.Add(new LeaderboardEntry("MidnightHauler", 45, 18, 300));
+            mockEntries.Add(new LeaderboardEntry("CrateFullOfChaos", 52, 14, 260));
+            mockEntries.Add(new LeaderboardEntry("SirenDodger", 61, 9, 150));
+            mockEntries.Add(new LeaderboardEntry("TwoStrokeBandit", 68, 4, 60));
+            // A few extra rows so the default view has enough entries to actually scroll.
+            mockEntries.Add(new LeaderboardEntry("HelmetOptional", 9, 33, 720));
+            mockEntries.Add(new LeaderboardEntry("PoundKeeper88", 76, 21, 410));
+            mockEntries.Add(new LeaderboardEntry("BarkAndRide", 83, 16, 280));
+            mockEntries.Add(new LeaderboardEntry("CurbsideCrook", 22, 11, 190));
+            mockEntries.Add(new LeaderboardEntry("LeashLess_Larry", 89, 6, 95));
         }
 
         /// <summary>
