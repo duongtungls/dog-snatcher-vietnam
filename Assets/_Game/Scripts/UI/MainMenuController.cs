@@ -11,6 +11,10 @@ namespace DogSnatcher.UI
     /// PLAY loads the run; when a run is in progress (a PlayerPrefs flag - nothing writes it yet)
     /// the button reads CONTINUE. Leaderboard and Options open placeholder panels. All copy comes
     /// through <see cref="StringTableAsset"/> keys per CLAUDE.md.
+    ///
+    /// The three buttons show baked-art labels (<c>Assets/_Game/Art/UI/Menu</c>), so the play
+    /// button also swaps its sprite between PLAY and CONTINUE. The <see cref="Text"/> labels stay
+    /// wired but hidden - a Vietnamese localisation pass would re-enable them.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MainMenuController : MonoBehaviour
@@ -26,6 +30,14 @@ namespace DogSnatcher.UI
         [SerializeField] private string continueKey = "menu.continue";
         [Tooltip("PlayerPrefs int a paused run would set so the button reads CONTINUE.")]
         [SerializeField] private string runInProgressPref = "run.inProgress";
+
+        [Header("Play / Continue art")]
+        [Tooltip("Image on the play button whose sprite swaps between PLAY and CONTINUE.")]
+        [SerializeField] private Image playImage;
+        [SerializeField] private Sprite playSprite;
+        [SerializeField] private Sprite playPressedSprite;
+        [SerializeField] private Sprite continueSprite;
+        [SerializeField] private Sprite continuePressedSprite;
 
         [Header("Leaderboard")]
         [SerializeField] private Button leaderboardButton;
@@ -49,6 +61,7 @@ namespace DogSnatcher.UI
             SetText(playLabel, Str(resume ? continueKey : playKey, resume ? "CONTINUE" : "PLAY"));
             SetText(leaderboardLabel, Str(leaderboardKey, "LEADERBOARD"));
             SetText(optionsLabel, Str(optionsKey, "OPTIONS"));
+            ApplyPlayArt(resume);
 
             Wire(playButton, Play);
             Wire(leaderboardButton, OpenLeaderboard);
@@ -75,6 +88,22 @@ namespace DogSnatcher.UI
         {
             ClosePanels();
             if (panel != null) panel.SetActive(true);
+        }
+
+        /// <summary>Point the play button's art at the PLAY or CONTINUE sprite pair.</summary>
+        private void ApplyPlayArt(bool resume)
+        {
+            Sprite face = resume ? continueSprite : playSprite;
+            Sprite pressed = resume ? continuePressedSprite : playPressedSprite;
+
+            if (playImage != null && face != null) playImage.sprite = face;
+            if (playButton != null && pressed != null)
+            {
+                SpriteState state = playButton.spriteState;
+                state.pressedSprite = pressed;
+                state.selectedSprite = pressed;
+                playButton.spriteState = state;
+            }
         }
 
         private string Str(string key, string fallback) => strings != null ? strings.Get(key) : fallback;

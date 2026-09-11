@@ -61,22 +61,41 @@ MonoBehaviour:
     text: 'DOG SNATCHER: VIETNAM
 
 
+
       A satirical endless runner.
 
-      No dogs
+
+      No
+      dogs
+
       were harmed in the making
 
-      of this game - only returned home.
+
+      of this game - only returned
+      home.
+
 
 
       Design,
+
       code & art
+
 
       Duong Tung
 
 
-      Made with Unity
+
+      Made with
+      Unity
+
 
 
       Thank you for
+
       playing.'
+  - key: birthyear.invalid
+    text: Enter a valid year
+  - key: joinleaderboard.emptyName
+    text: Enter a name first
+  - key: leaderboard.joinCta
+    text: JOIN LEADERBOARD
