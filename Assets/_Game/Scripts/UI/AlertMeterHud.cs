@@ -11,8 +11,10 @@ namespace DogSnatcher.UI
     ///
     /// Milestone 1 has no HeatSystem so this sits empty until one starts driving the channel -
     /// the layout and wiring are done now. Rebuilds only on <see cref="WantedLevelChannel.Changed"/>,
-    /// no per-frame cost. Assign real sprites to the segment / star Images later; the colours
-    /// below tint whatever sprite (or plain box) is there.
+    /// no per-frame cost. Assign real sprites to the segment Images later; the colours below tint
+    /// whatever sprite (or plain box) is there. Stars swap between <see cref="starOnSprite"/> and
+    /// <see cref="starOffSprite"/> instead of relying purely on a colour tint, since a lit/unlit
+    /// star reads clearer as two distinct pieces of art than one tinted the same shape.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class AlertMeterHud : MonoBehaviour
@@ -31,8 +33,11 @@ namespace DogSnatcher.UI
 
         [Header("Stars")]
         [SerializeField] private Image[] stars;
-        [SerializeField] private Color starOn = new Color(1f, 0.79f, 0.17f, 1f);
-        [SerializeField] private Color starOff = new Color(0.28f, 0.28f, 0.3f, 1f);
+        [Tooltip("Optional. When both are assigned, a star's sprite swaps lit/unlit instead of just tinting.")]
+        [SerializeField] private Sprite starOnSprite;
+        [SerializeField] private Sprite starOffSprite;
+        [SerializeField] private Color starOn = Color.white;
+        [SerializeField] private Color starOff = Color.white;
 
         private void Awake()
         {
@@ -68,9 +73,16 @@ namespace DogSnatcher.UI
             }
 
             if (stars != null)
+            {
+                bool hasSprites = starOnSprite != null && starOffSprite != null;
                 for (int i = 0; i < stars.Length; i++)
-                    if (stars[i] != null)
-                        stars[i].color = i < stars01 ? starOn : starOff;
+                {
+                    if (stars[i] == null) continue;
+                    bool on = i < stars01;
+                    if (hasSprites) stars[i].sprite = on ? starOnSprite : starOffSprite;
+                    stars[i].color = on ? starOn : starOff;
+                }
+            }
         }
 
         private static Gradient DefaultGradient()

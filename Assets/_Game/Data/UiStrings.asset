@@ -103,3 +103,5 @@ MonoBehaviour:
     text: NITRO
   - key: hud.lucky
     text: LUCKY
+  - key: hud.backToMenu
+    text: MENU
