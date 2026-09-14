@@ -9,7 +9,11 @@ namespace DogSnatcher.Spawning
     ///
     /// The player can shed a slice of that speed by holding the touch "back" zone / the S key -
     /// <see cref="PlayerSteering"/> writes <see cref="BrakeChannel"/>, this scales the curve
-    /// speed by up to <see cref="maxBrakeFraction"/>.
+    /// speed by up to <see cref="maxBrakeFraction"/>. In the other direction, spending a Nitro
+    /// charge (GDD §6.2, HUD button) sets <see cref="nitro"/>'s active window - while it's active
+    /// the curve speed is boosted by <see cref="nitroBoostFraction"/>. Brake and nitro can't both
+    /// be true at once in practice (braking cancels a run), but if they were, brake is applied
+    /// first and nitro multiplies what's left.
     ///
     /// When the run ends in a crash (<see cref="RunLifecycleChannel"/>) it brakes the run speed
     /// to a stop over <see cref="crashBrakeTime"/> so the whole world glides to a halt rather
@@ -37,6 +41,13 @@ namespace DogSnatcher.Spawning
 
         [Tooltip("Fraction of the curve speed shed at full brake. 0.45 = the bike can drop to 55% of pace.")]
         [SerializeField, Range(0f, 0.9f)] private float maxBrakeFraction = 0.45f;
+
+        [Header("Nitro")]
+        [Tooltip("Optional. Nitro consumable (HUD button) - while its active window is running, speed is boosted.")]
+        [SerializeField] private ConsumableChannel nitro;
+
+        [Tooltip("Fraction of the curve speed added while nitro is active. GDD §6.2 default: +60%.")]
+        [SerializeField, Min(0f)] private float nitroBoostFraction = 0.6f;
 
         [Header("Lifecycle")]
         [Tooltip("Optional. When the run crashes the speed brakes to zero over the time below.")]
@@ -83,6 +94,7 @@ namespace DogSnatcher.Spawning
 
             currentSpeed = target * launch;
             if (brake != null) currentSpeed *= 1f - brake.Brake01 * maxBrakeFraction;
+            if (nitro != null && nitro.IsActive) currentSpeed *= 1f + nitroBoostFraction;
             speedChannel.Advance(currentSpeed, dt);
         }
     }

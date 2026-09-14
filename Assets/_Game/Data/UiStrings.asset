@@ -99,3 +99,7 @@ MonoBehaviour:
     text: Enter a name first
   - key: leaderboard.joinCta
     text: JOIN LEADERBOARD
+  - key: hud.nitro
+    text: NITRO
+  - key: hud.lucky
+    text: LUCKY

@@ -13,7 +13,9 @@ namespace DogSnatcher.Gameplay
     ///    evenly, clamped to the asphalt and to a small step per frame so it reads as a nudge;
     ///  - a car holds its line - only the lighter vehicle gives way;
     ///  - a static hazard (wedding tent) never gives way - whatever overlapped it is shoved off;
-    ///  - the player overlapping anything ends the run through <see cref="RunLifecycleChannel"/>.
+    ///  - the player overlapping anything ends the run through <see cref="RunLifecycleChannel"/> -
+    ///    unless the Lucky Charm (GDD §6.2, HUD button) is active, in which case the crash is
+    ///    skipped entirely for as long as <see cref="luckyCharm"/>'s active window lasts.
     ///
     /// The push is transient - a lane-keeping rider steers back to its lane next frame - so this
     /// is a safety net under the lane-avoid AI in TrafficRider / PoliceAmbientPatrol, not the
@@ -26,6 +28,8 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private RunLifecycleChannel lifecycle;
         [Tooltip("Read to check whether the player is currently being chased - a wanted player who crashes is always arrested, regardless of what they hit.")]
         [SerializeField] private WantedLevelChannel wanted;
+        [Tooltip("Optional. While this consumable's active window is running, a player collision never ends the run.")]
+        [SerializeField] private ConsumableChannel luckyCharm;
 
         [Tooltip("Most a bike can be shoved in one frame, metres - keeps a shove from teleporting.")]
         [SerializeField, Min(0.01f)] private float maxStepPerFrame = 0.5f;
@@ -56,7 +60,7 @@ namespace DogSnatcher.Gameplay
 
                     if (a.IsPlayer || b.IsPlayer)
                     {
-                        if (lifecycle != null)
+                        if (lifecycle != null && (luckyCharm == null || !luckyCharm.IsActive))
                         {
                             var other = a.IsPlayer ? b : a;
                             lifecycle.Crash(ClassifyCrash(other));
