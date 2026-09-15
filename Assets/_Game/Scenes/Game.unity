@@ -2388,18 +2388,18 @@ MonoBehaviour:
   sortingLayer: Default
   sortingOrder: 40
   groundPool: 1
-  poolSprite: {fileID: 21300000, guid: a69ef3c80a8a1cb0ca05b34def25d858, type: 3}
+  poolSprite: {fileID: 21300000, guid: d1943a91357963e3e8baf7c64380538c, type: 3}
   poolMaterial: {fileID: 2100000, guid: 885fc6c9d979b4c619fac65ec5d715b0, type: 2}
-  poolColor: {r: 1, g: 0.84, b: 0.55, a: 0.5}
-  poolOffset: {x: 4.8, y: 0.06, z: 0}
-  poolSize: {x: 15, y: 6.5}
+  poolColor: {r: 1, g: 0.8, b: 0.5, a: 0.3}
+  poolOffset: {x: 0.6, y: 0.06, z: 0}
+  poolSize: {x: 9, y: 5.2}
   poolSortingOrder: 6
   castLight: 1
-  lightOffset: {x: 3, y: 0.1, z: 0.4}
+  lightOffset: {x: 0.6, y: 0.15, z: 0.2}
   lightColor: {r: 1, g: 0.8, b: 0.46, a: 1}
-  lightIntensity: 1.9
-  lightInnerRadius: 1.5
-  lightOuterRadius: 7
+  lightIntensity: 1.35
+  lightInnerRadius: 0.8
+  lightOuterRadius: 5.5
   lightFalloff: 0.6
 --- !u!1 &687321674 stripped
 GameObject:

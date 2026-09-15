@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: Night
   ambientColor: {r: 0.55, g: 0.62, b: 0.9, a: 1}
   ambientIntensity: 0.62
-  groundTint: {r: 0.17, g: 0.19, b: 0.3, a: 1}
+  groundTint: {r: 0.22, g: 0.245, b: 0.35, a: 1}
   skyColor: {r: 0.025, g: 0.03, b: 0.06, a: 1}
   headlightsOn: 1

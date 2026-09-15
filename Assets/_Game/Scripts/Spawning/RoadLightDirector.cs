@@ -15,10 +15,11 @@ namespace DogSnatcher.Spawning
     ///
     /// Each lamp is a plain parent (scrolls, unrotated) with three children:
     ///  - <c>Visual</c>: the pole sprite, stood up to face the rig camera.
-    ///  - <c>Pool</c>: a soft radial glow sprite laid FLAT on the ground - the actual pool of light
-    ///    on the sidewalk and the near lanes. The road/sidewalk meshes are URP-Unlit so a real
-    ///    <see cref="Light2D"/> can't touch them; this decal (same Glow_Radial + M_SirenGlow
-    ///    unlit-transparent combo the vehicle head/tail glows use) is what reads as the light.
+    ///  - <c>Pool</c>: a soft glow sprite laid FLAT on the ground - the actual pool of light on the
+    ///    sidewalk and the near lanes. The road/sidewalk meshes are URP-Unlit so a real
+    ///    <see cref="Light2D"/> can't touch them; this decal (Glow_Pool on the additive
+    ///    M_LightGlow, the same combo the vehicle lights use) is what reads as the light. It sits at
+    ///    the foot of the pole and reaches out over the road - see <see cref="poolOffset"/>.
     ///  - <c>Glow</c>: an optional point <see cref="Light2D"/> that lights the Sprite-Lit movers
     ///    (bike, dogs, traffic) as they pass under the lamp.
     ///
@@ -71,16 +72,22 @@ namespace DogSnatcher.Spawning
         [Tooltip("Additive glow material so the pool adds light rather than washing a decal - use M_LightGlow.")]
         [SerializeField] private Material poolMaterial;
 
-        [Tooltip("Warm sodium colour. Alpha = how strongly the pool reads.")]
-        [SerializeField] private Color poolColor = new Color(1f, 0.84f, 0.55f, 0.5f);
+        [Tooltip("Warm sodium colour. Alpha = how strongly the pool reads. Keep it low - the pools " +
+                 "are additive and two of them overlap on screen at this spacing.")]
+        [SerializeField] private Color poolColor = new Color(1f, 0.80f, 0.50f, 0.30f);
 
-        [Tooltip("Pool centre relative to the lamp base. + X reaches out across the road - push it " +
-                 "most of the way over so the ellipse spans the left kerb to part of the right kerb.")]
-        [SerializeField] private Vector3 poolOffset = new Vector3(4.8f, 0.06f, 0f);
+        [Tooltip("Pool centre relative to the lamp base - the light belongs at the FOOT of the pole, " +
+                 "spreading out over the road. Keep Z at ~0: the pool sits level with the base, not " +
+                 "up-screen at the drawn lamp head. The pole's foot draws about 1.6 m to the LEFT of " +
+                 "this transform (the sprite is centred, the pole inside it is not), so the ellipse " +
+                 "is only wide enough to cover both if its + X centre stays modest - at 0.6 with a " +
+                 "9 m width it runs from the foot out to the middle of the road.")]
+        [SerializeField] private Vector3 poolOffset = new Vector3(0.6f, 0.06f, 0f);
 
         [Tooltip("Ellipse footprint in metres: x = width across the road (long axis), y = length " +
-                 "along the street (short axis).")]
-        [SerializeField] private Vector2 poolSize = new Vector2(15f, 6.5f);
+                 "along the street (short axis). The road is 8 m wide - a pool wider than that " +
+                 "reads as fog, not as a lamp.")]
+        [SerializeField] private Vector2 poolSize = new Vector2(9f, 5.2f);
 
         [Tooltip("Above the road (order 0) but below traffic - vehicles drive visually 'through' the pool.")]
         [SerializeField] private int poolSortingOrder = 6;
@@ -89,11 +96,11 @@ namespace DogSnatcher.Spawning
         [Tooltip("Also spawn a Light2D - only reaches the Sprite-Lit bike / dogs / traffic, not the road.")]
         [SerializeField] private bool castLight = true;
 
-        [SerializeField] private Vector3 lightOffset = new Vector3(3f, 0.1f, 0.4f);
+        [SerializeField] private Vector3 lightOffset = new Vector3(0.6f, 0.15f, 0.2f);
         [SerializeField] private Color lightColor = new Color(1f, 0.80f, 0.46f, 1f);
-        [SerializeField, Min(0f)] private float lightIntensity = 1.6f;
-        [SerializeField, Min(0f)] private float lightInnerRadius = 1.5f;
-        [SerializeField, Min(0.1f)] private float lightOuterRadius = 8f;
+        [SerializeField, Min(0f)] private float lightIntensity = 1.35f;
+        [SerializeField, Min(0f)] private float lightInnerRadius = 0.8f;
+        [SerializeField, Min(0.1f)] private float lightOuterRadius = 5.5f;
         [SerializeField, Range(0f, 1f)] private float lightFalloff = 0.6f;
 
         private Transform[] lamps;
