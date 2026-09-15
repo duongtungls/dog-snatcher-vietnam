@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4fa0f0ed9ecdf169acf92fa7e4dda99, type: 3}
+  m_Name: YellowDog
+  m_EditorClassIdentifier: 
+  nameKey: dog.yellowdog
+  sprite: {fileID: 883165260, guid: 469edf437152dfabcac8cfd3db8bd1a0, type: 3}
+  score: 50
+  spawnWeight: 0.65
+  behaviour: 0
+  alertRange: 6
+  boltSpeed: 6
+  wandersIntoRoad: 0
+  chained: 0
+  snareSpeedPenalty: 0.25
+  wantedStarsOnSnatch: 0
