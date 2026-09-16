@@ -7169,6 +7169,7 @@ GameObject:
   - component: {fileID: 1699836165}
   - component: {fileID: 1699836164}
   - component: {fileID: 1699836166}
+  - component: {fileID: 1699836167}
   m_Layer: 0
   m_Name: RunDirector
   m_TagString: Untagged
@@ -7309,6 +7310,22 @@ MonoBehaviour:
   impact: {fileID: 11400000, guid: 6232dde930f5adfd6b66a6b795248cac, type: 2}
   lifecycle: {fileID: 11400000, guid: 7f3ae3ed0068b7adcbbb8d514d5fad24, type: 2}
   seed: 0
+--- !u!114 &1699836167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699836160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02fe54cc1d8e8a6d7b628af4d1fea0fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lifecycle: {fileID: 11400000, guid: 7f3ae3ed0068b7adcbbb8d514d5fad24, type: 2}
+  dogCount: {fileID: 11400000, guid: 74538999af0e0638b95ef4b2168d5fe9, type: 2}
+  score: {fileID: 11400000, guid: b7a5b0947167bfea3a8752fbc1b4e605, type: 2}
+  leaderboardId: dogs_snatched
 --- !u!1 &1727523266
 GameObject:
   m_ObjectHideFlags: 0

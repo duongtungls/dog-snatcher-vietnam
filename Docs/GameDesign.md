@@ -293,7 +293,7 @@ Run score = (distance / 10) + Σ(dog value × combo at delivery) + bonuses
 Main Menu ─┬─ PLAY      (into a run in < 2 taps)
            ├─ GARAGE    (bike, snare, crate, nitro)
            ├─ MISSIONS  (3 dailies, 24h refresh)
-           └─ SCORES    (local + friends leaderboard)
+           └─ SCORES    (Unity Cloud leaderboard, §6.5)
 ```
 
 ### 6.2 Shop / Upgrades
@@ -358,6 +358,16 @@ Note where the **Police K9** sits: level 12. Punishing a beginner for a read the
 - Opt-in ads: watch to ×2 end-of-run score, or to revive.
 - IAP: remove-ads bundle, character skins (poncho, jelly sandals, pith helmet).
 - **No** gameplay-affecting power-ups for sale. No pay-to-win.
+
+### 6.5 Leaderboard — Unity Cloud
+
+One global board, backed by **Unity Gaming Services Leaderboards** (packages `com.unity.services.leaderboards` + `authentication` + `core`; the project is linked to cloud project `4c11669d…`, org `tungbsls`). The player is signed in **anonymously** on first use — no account UI, the device *is* the identity — so joining stays a two-tap flow: birth year → avatar + name → LET'S GO.
+
+- **Leaderboard id `dogs_snatched`**, sorted descending, update type *keep best*. Its definition is checked in at `Assets/_Game/Cloud/dogs_snatched.lb` and deployed from the editor's **Deployment** window (Services ▸ Deployment) — the dashboard is never hand-edited.
+- **Score = dogs snatched in one run.** Coins from that run, the avatar index and the typed display name ride along as entry **metadata**, so one fetch paints a full row. (Cloud player names cannot hold spaces and get a `#1234` tag, so the name shown is the metadata one.)
+- **Personal best is tracked locally before joining** (`LeaderboardStore`), so a late joiner's first row is the run they are proud of, not zeros. Every run end records the best; if the player has joined and beat it, the score is pushed immediately (`LeaderboardRunReporter`). Anything that could not be sent is flagged *pending* and sent the next time the board opens.
+- **The board screen** paints the local row at once, then fetches the top 50 and the player's true rank; an own row below the top 50 is appended with its real rank. A one-line status narrates connecting / syncing / offline. Offline never blocks — the local best simply stays on screen.
+- **No fake rivals.** The comedic mock roster is an editor toggle (`mockRosterWhenOffline`) and is off in a shipping build.
 
 ---
 

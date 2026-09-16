@@ -6,9 +6,15 @@ namespace DogSnatcher.UI
 {
     /// <summary>
     /// Plain C# leaderboard model (no MonoBehaviour dependency, per CLAUDE.md's testability rule).
-    /// A hardcoded mock roster regenerates every session; only the local player's own submitted
-    /// entry survives across sessions, via PlayerPrefs (JsonUtility, single key). Rank is derived
-    /// from sort position - <see cref="LeaderboardEntry"/> never stores one.
+    /// The LOCAL side of the board: the player's own row, their personal best, whether they have
+    /// joined, and whether the cloud still owes a sync - all in PlayerPrefs. The rows of everyone
+    /// else come from Unity Cloud through <see cref="CloudLeaderboard"/>; the optional mock roster
+    /// (<see cref="LeaderboardStore(bool)"/>) is an editor / demo stand-in for when it is offline.
+    /// Local ranks are derived from sort position.
+    ///
+    /// Personal best is tracked even before the player joins, so the row they eventually submit
+    /// shows the run they are proud of, not zeros. Any change to the own row raises
+    /// <see cref="PendingSync"/>; the cloud side clears it with <see cref="MarkSynced"/>.
     ///
     /// This is menu-only data (a handful of rows built at open-time), so it doesn't chase the
     /// run-loop's 0 B/frame budget - see <see cref="RankedEntries"/>.
@@ -18,6 +24,9 @@ namespace DogSnatcher.UI
         private const string PlayerEntryPrefsKey = "leaderboard.player.json";
         private const string BirthYearPrefsKey = "leaderboard.birthYear";
         private const string JoinedPrefsKey = "leaderboard.joined";
+        private const string BestDogsPrefsKey = "leaderboard.best.dogs";
+        private const string BestCoinsPrefsKey = "leaderboard.best.coins";
+        private const string PendingSyncPrefsKey = "leaderboard.pendingSync";
 
         /// <summary>Sort key - dogs snatched is the primary score, per the GDD's "top scores come
         /// from returning dogs" framing.</summary>
@@ -26,9 +35,13 @@ namespace DogSnatcher.UI
 
         private readonly List<LeaderboardEntry> mockEntries = new List<LeaderboardEntry>();
 
-        public LeaderboardStore()
+        public LeaderboardStore() : this(true) { }
+
+        /// <param name="seedMockRoster">True = fill the board with the comedic stand-in roster
+        /// (tests, editor demos). False = local rows only; the real roster comes from the cloud.</param>
+        public LeaderboardStore(bool seedMockRoster)
         {
-            SeedMockEntries();
+            if (seedMockRoster) SeedMockEntries();
         }
 
         /// <summary>Comedic, English-only mock roster - regenerated fresh every session, never
@@ -72,12 +85,61 @@ namespace DogSnatcher.UI
             return entries;
         }
 
-        /// <summary>Submit/replace the local player's own row and mark the leaderboard as joined.</summary>
+        /// <summary>Submit/replace the local player's own row and mark the leaderboard as joined.
+        /// Raises <see cref="PendingSync"/> so the cloud copy gets the same row.</summary>
         public void SubmitOwnEntry(string playerName, int avatarIndex, int dogsSnatched, int coinsCollected)
         {
             var entry = new LeaderboardEntry(playerName, avatarIndex, dogsSnatched, coinsCollected, isOwnUser: true);
             PlayerPrefs.SetString(PlayerEntryPrefsKey, JsonUtility.ToJson(entry));
             PlayerPrefs.SetInt(JoinedPrefsKey, 1);
+            PlayerPrefs.SetInt(BestDogsPrefsKey, Mathf.Max(BestDogs, dogsSnatched));
+            PlayerPrefs.SetInt(BestCoinsPrefsKey, Mathf.Max(BestCoins, coinsCollected));
+            PlayerPrefs.SetInt(PendingSyncPrefsKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Join with the name + avatar the player picked and the best run recorded so far.</summary>
+        public void Join(string playerName, int avatarIndex) =>
+            SubmitOwnEntry(playerName, avatarIndex, BestDogs, BestCoins);
+
+        /// <summary>
+        /// Record a finished run. Returns true when it beat the personal best (more dogs, or the
+        /// same dogs with more coins) - in which case a joined player's own row is updated and a
+        /// cloud sync is owed.
+        /// </summary>
+        public bool RecordRun(int dogsSnatched, int coinsCollected)
+        {
+            bool better = dogsSnatched > BestDogs || (dogsSnatched == BestDogs && coinsCollected > BestCoins);
+            if (!better) return false;
+
+            PlayerPrefs.SetInt(BestDogsPrefsKey, dogsSnatched);
+            PlayerPrefs.SetInt(BestCoinsPrefsKey, coinsCollected);
+
+            var own = LoadOwnEntry();
+            if (own != null)
+            {
+                own.DogsSnatched = dogsSnatched;
+                own.CoinsCollected = coinsCollected;
+                PlayerPrefs.SetString(PlayerEntryPrefsKey, JsonUtility.ToJson(own));
+                PlayerPrefs.SetInt(PendingSyncPrefsKey, 1);
+            }
+
+            PlayerPrefs.Save();
+            return true;
+        }
+
+        /// <summary>Most dogs snatched in a single run on this device, joined or not.</summary>
+        public static int BestDogs => PlayerPrefs.GetInt(BestDogsPrefsKey, 0);
+
+        /// <summary>Coins collected in that best run.</summary>
+        public static int BestCoins => PlayerPrefs.GetInt(BestCoinsPrefsKey, 0);
+
+        /// <summary>True while the cloud copy of the own row is older than the local one.</summary>
+        public static bool PendingSync => PlayerPrefs.GetInt(PendingSyncPrefsKey, 0) != 0;
+
+        public static void MarkSynced()
+        {
+            PlayerPrefs.SetInt(PendingSyncPrefsKey, 0);
             PlayerPrefs.Save();
         }
 

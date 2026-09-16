@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using DogSnatcher.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,9 +14,14 @@ namespace DogSnatcher.UI
     /// opened occasionally, not the run loop, so growing the pool with plain Instantiate on demand
     /// is fine per CLAUDE.md's pooling note - rows are only ever added, never destroyed, and excess
     /// instances from a shorter roster are deactivated rather than torn down.
-    /// Reads <see cref="LeaderboardStore"/> fresh on every <see cref="Refresh"/>. When the player
-    /// hasn't joined yet, a JOIN LEADERBOARD CTA opens <see cref="birthYearModal"/> first (if no
-    /// birth year is on file yet) or straight to <see cref="joinLeaderboardModal"/>.
+    /// Every <see cref="Refresh"/> paints the local rows at once (the player's own row, plus the
+    /// mock roster if <see cref="mockRosterWhenOffline"/>), then goes to Unity Cloud: signs in,
+    /// pushes the own row if a sync is owed, fetches the top <see cref="topCount"/> and the
+    /// player's true rank, and repaints. <see cref="statusText"/> narrates that; if the cloud is
+    /// unreachable the local rows simply stay. A refresh serial discards results from a fetch
+    /// that was superseded or whose modal has since closed.
+    /// When the player hasn't joined yet, a JOIN LEADERBOARD CTA opens <see cref="birthYearModal"/>
+    /// first (if no birth year is on file yet) or straight to <see cref="joinLeaderboardModal"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LeaderboardModal : MonoBehaviour
@@ -51,23 +59,98 @@ namespace DogSnatcher.UI
         [Header("Close")]
         [SerializeField] private Button closeButton;
 
-        private readonly LeaderboardStore store = new LeaderboardStore();
+        [Header("Unity Cloud")]
+        [Tooltip("Leaderboard id on the Unity Cloud dashboard - matches Assets/_Game/Cloud/*.lb.")]
+        [SerializeField] private string leaderboardId = CloudLeaderboard.DefaultLeaderboardId;
+        [Tooltip("How many top rows to fetch. The player's own row is appended if it sits below them.")]
+        [SerializeField, Range(1, 100)] private int topCount = 50;
+        [Tooltip("Editor / demo aid: show the comedic stand-in roster while the cloud is unreachable. " +
+                 "Off for a shipping build - fake rivals on a real board would be a lie.")]
+        [SerializeField] private bool mockRosterWhenOffline;
+        [Tooltip("Optional one-line status under the list: connecting / syncing / offline.")]
+        [SerializeField] private Text statusText;
+        [SerializeField] private string connectingKey = "leaderboard.status.connecting";
+        [SerializeField] private string syncingKey = "leaderboard.status.syncing";
+        [SerializeField] private string offlineKey = "leaderboard.status.offline";
+
+        private LeaderboardStore store;
+        private CloudLeaderboard cloud;
+        private int refreshSerial;
         private readonly List<LeaderboardRowUi> rowInstances = new List<LeaderboardRowUi>();
 
         private void Awake()
         {
+            store = new LeaderboardStore(mockRosterWhenOffline);
+            cloud = new CloudLeaderboard(leaderboardId);
             Wire(joinCtaButton, OnJoinCtaClicked);
             Wire(closeButton, Close);
         }
 
         private void OnEnable() => Refresh();
 
-        /// <summary>Re-reads the store and repaints every row + the JOIN CTA visibility. Grows the
-        /// row pool as needed, reuses/deactivates extras rather than destroying them.</summary>
+        private void OnDisable() => refreshSerial++;   // orphan any fetch still in flight
+
+        /// <summary>Paint the local rows now, then refresh from Unity Cloud in the background.</summary>
         public void Refresh()
         {
+            if (store == null) return;   // not awake yet (inactive prefab instance being poked)
             var entries = store.RankedEntries(out var ranks);
+            Paint(entries, ranks);
+            _ = RefreshFromCloudAsync(++refreshSerial);
+        }
 
+        private async Task RefreshFromCloudAsync(int serial)
+        {
+            SetStatus(Str(connectingKey));
+            bool online = await UnityCloud.EnsureSignedInAsync();
+            if (serial != refreshSerial) return;
+            if (!online)
+            {
+                SetStatus(Str(offlineKey));
+                return;
+            }
+
+            try
+            {
+                if (LeaderboardStore.HasJoined && LeaderboardStore.PendingSync)
+                {
+                    SetStatus(Str(syncingKey));
+                    LeaderboardEntry own = store.LoadOwnEntry();
+                    if (own != null)
+                    {
+                        await cloud.SetPlayerNameAsync(own.PlayerName);
+                        await cloud.SubmitAsync(own.DogsSnatched, own.CoinsCollected, own.AvatarIndex, own.PlayerName);
+                        if (serial != refreshSerial) return;
+                        LeaderboardStore.MarkSynced();
+                    }
+                }
+
+                List<LeaderboardEntry> rows = await cloud.FetchTopAsync(topCount);
+                LeaderboardEntry ownRow = LeaderboardStore.HasJoined ? await cloud.FetchOwnAsync() : null;
+                if (serial != refreshSerial) return;
+
+                bool ownInTop = false;
+                for (int i = 0; i < rows.Count; i++)
+                    if (rows[i].IsOwnUser) { ownInTop = true; break; }
+                if (ownRow != null && !ownInTop) rows.Add(ownRow);
+
+                var ranks = new List<int>(rows.Count);
+                for (int i = 0; i < rows.Count; i++) ranks.Add(rows[i].Rank > 0 ? rows[i].Rank : i + 1);
+
+                Paint(rows, ranks);
+                SetStatus(string.Empty);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Leaderboard] cloud refresh failed: " + e.Message);
+                if (serial == refreshSerial) SetStatus(Str(offlineKey));
+            }
+        }
+
+        /// <summary>Repaints every row + the JOIN CTA visibility. Grows the row pool as needed,
+        /// reuses/deactivates extras rather than destroying them.</summary>
+        private void Paint(List<LeaderboardEntry> entries, List<int> ranks)
+        {
             EnsureRowCount(entries.Count);
             ResizeContent(entries.Count);
 
@@ -163,6 +246,15 @@ namespace DogSnatcher.UI
             Sprite sprite = avatarCatalog.Get(avatarIndex);
             if (sprite != null) avatarImage.sprite = sprite;
         }
+
+        private void SetStatus(string message)
+        {
+            if (statusText == null) return;
+            statusText.text = message ?? string.Empty;
+            statusText.gameObject.SetActive(!string.IsNullOrEmpty(message));
+        }
+
+        private string Str(string key) => strings != null ? strings.Get(key) : key;
 
         private static void SetTextColor(Text t, Color c)
         {

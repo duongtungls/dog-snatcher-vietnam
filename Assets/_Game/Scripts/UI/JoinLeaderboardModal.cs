@@ -12,8 +12,9 @@ namespace DogSnatcher.UI
     /// <see cref="RandomizeAvatar"/> both index straight into these arrays. Whichever way the
     /// selection changes, <see cref="avatarScrollRect"/> snaps to keep the selected slot visible -
     /// RANDOM AVATAR can otherwise land on a slot the player has scrolled past. On LET'S GO the
-    /// entry is written via <see cref="LeaderboardStore"/> and control returns to
-    /// <see cref="leaderboardModal"/>, refreshed to show the new own-row.
+    /// entry is written via <see cref="LeaderboardStore.Join"/> (with the personal best recorded
+    /// so far) and control returns to <see cref="leaderboardModal"/>, whose refresh pushes the
+    /// new row to Unity Cloud and shows it ranked.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class JoinLeaderboardModal : MonoBehaviour
@@ -95,16 +96,13 @@ namespace DogSnatcher.UI
                 return;
             }
 
-            var store = new LeaderboardStore();
-            store.SubmitOwnEntry(name, selectedAvatarIndex, dogsSnatched: 0, coinsCollected: 0);
+            var store = new LeaderboardStore(seedMockRoster: false);
+            store.Join(name, selectedAvatarIndex);
 
             HideValidation();
             gameObject.SetActive(false);
-            if (leaderboardModal != null)
-            {
-                leaderboardModal.gameObject.SetActive(true);
-                leaderboardModal.Refresh();
-            }
+            // Re-enabling the leaderboard runs its OnEnable refresh, which syncs the new row.
+            if (leaderboardModal != null) leaderboardModal.gameObject.SetActive(true);
         }
 
         /// <summary>BACK - cancel without joining.</summary>
