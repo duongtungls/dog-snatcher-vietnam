@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d4cbda55708c0c218cba94edc4330da, type: 3}
+  m_Name: DifficultyPhases
+  m_EditorClassIdentifier: 
+  phases:
+  - name: Back Lanes
+    fromMetres: 0
+    density: 0.25
+    aggression: 0
+    roster: 1
+  - name: Main Street
+    fromMetres: 400
+    density: 0.6
+    aggression: 0.5
+    roster: 103
+  - name: The Boulevard
+    fromMetres: 1200
+    density: 0.85
+    aggression: 0.85
+    roster: 111
+  - name: Endless
+    fromMetres: 2500
+    density: 1
+    aggression: 1
+    roster: -1

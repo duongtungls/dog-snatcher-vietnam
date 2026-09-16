@@ -52,7 +52,28 @@ namespace DogSnatcher.Pursuit
         [Tooltip("Seconds of no fresh witnessed crime before a Wanted star drops.")]
         [SerializeField, Min(0.5f)] private float calmSeconds = 9f;
 
+        [Header("Difficulty")]
+        [Tooltip("Witness range and cool-off at the bottom of the aggression scale, as a fraction " +
+                 "of the authored values. RunDirector drives aggression from the phase x band " +
+                 "product (GDD 4.2.1); above 1 it stretches them instead.")]
+        [SerializeField, Range(0.2f, 1f)] private float minAggressionScale = 0.55f;
+
         private float calmLeft;
+        private float aggression01 = 1f;
+
+        /// <summary>
+        /// How hard this run pursues, 1 = as authored. Set by <c>RunDirector</c> every frame from
+        /// the phase x band product. At 0 nobody is ever wanted - that is how the Learner band and
+        /// the pursuit-free opening seconds of a run are enforced (GDD 4.2.1 / 6.3).
+        /// </summary>
+        public void SetAggression(float value) => aggression01 = Mathf.Max(0f, value);
+
+        /// <summary>True while no snatch can raise heat at all.</summary>
+        public bool Suppressed => aggression01 <= 0.001f;
+
+        /// <summary>Authored ranges and timers are scaled by this. Never below <see cref="minAggressionScale"/>.</summary>
+        private float AggressionScale =>
+            aggression01 <= 1f ? Mathf.Lerp(minAggressionScale, 1f, aggression01) : aggression01;
 
         private void Awake()
         {
@@ -75,13 +96,15 @@ namespace DogSnatcher.Pursuit
         {
             if (wanted == null || wanted.CurrentStars <= 0) return;
 
+            float calmWindow = calmSeconds * AggressionScale;
+
             calmLeft -= Time.deltaTime;
-            wanted.SetHeat(Mathf.Clamp01(calmLeft / calmSeconds));
+            wanted.SetHeat(Mathf.Clamp01(calmLeft / calmWindow));
 
             if (calmLeft <= 0f)
             {
                 wanted.SetStars(wanted.CurrentStars - 1);
-                calmLeft = wanted.CurrentStars > 0 ? calmSeconds : 0f;
+                calmLeft = wanted.CurrentStars > 0 ? calmWindow : 0f;
                 if (wanted.CurrentStars <= 0) wanted.SetHeat(0f);
             }
         }
@@ -89,6 +112,7 @@ namespace DogSnatcher.Pursuit
         private void OnDogSnatched(int points)
         {
             if (wanted == null) return;
+            if (Suppressed) return;                          // Learner band / opening seconds: nobody reacts
 
             PoliceThreat witness = FindWitness();
             bool alreadyWanted = wanted.CurrentStars > 0;
@@ -102,7 +126,7 @@ namespace DogSnatcher.Pursuit
             }
 
             // any snatch while things are hot keeps the pursuit alive
-            calmLeft = calmSeconds;
+            calmLeft = calmSeconds * AggressionScale;
             wanted.SetHeat(1f);
         }
 
@@ -113,13 +137,14 @@ namespace DogSnatcher.Pursuit
             var all = PoliceThreat.All;
             PoliceThreat best = null;
             float bestSqr = float.MaxValue;
+            float scale = AggressionScale;
             for (int i = 0; i < all.Count; i++)
             {
                 var pt = all[i];
                 if (pt == null) continue;
 
                 Vector3 d = pt.LocalCenter - me;                 // d.z > 0 : cop is ahead of the rider
-                float range = d.z >= 0f ? witnessRangeAhead : witnessRangeBehind;
+                float range = (d.z >= 0f ? witnessRangeAhead : witnessRangeBehind) * scale;
                 float sqr = d.x * d.x + d.z * d.z;
                 if (sqr <= range * range && sqr < bestSqr) { bestSqr = sqr; best = pt; }
             }

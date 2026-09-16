@@ -410,6 +410,7 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   visual: {fileID: 6216574087915253949}
   rideVfx: {fileID: 8556137073313618346}
+  roster: {fileID: 11400000, guid: 8adf7a9e1d64db46685b06466b2721b0, type: 2}
   sameDirectionChance: 0.55
   sameDirectionSpeedRange: {x: 6, y: 8.5}
   oncomingSpeedRange: {x: 6, y: 9}

@@ -758,6 +758,7 @@ GameObject:
   - component: {fileID: 2040128786851339466}
   - component: {fileID: 4188819929873510206}
   - component: {fileID: 5331887526043195172}
+  - component: {fileID: 5170424244293391225}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -868,6 +869,21 @@ MonoBehaviour:
   copCarBubble: {fileID: -1627201512, guid: 0f2e07276a0953227a3b123de9962838, type: 3}
   policeSightRange: 16
   policeAlertCooldown: 5
+--- !u!114 &5170424244293391225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7707149837288274067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fbeb156da1e9a325a6fdf9b226f8483, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  impact: {fileID: 11400000, guid: 6232dde930f5adfd6b66a6b795248cac, type: 2}
+  progression: {fileID: 11400000, guid: 0d20b2edca511aa149e22f341fb5676c, type: 2}
+  luckyCharm: {fileID: 11400000, guid: f8b015f9c3537f00490cb23defcf62aa, type: 2}
 --- !u!1001 &641835139208096492
 PrefabInstance:
   m_ObjectHideFlags: 0

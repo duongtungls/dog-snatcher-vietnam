@@ -114,6 +114,23 @@ No virtual buttons. No second hand. No tilt.
 - Three light hits within 5 seconds = you go down. No grinding through it.
 - **Lucky Charm** (§6.2): one revive per run, 2s invulnerability, clears one Wanted star.
 
+**Which impacts are hard and which are light** — the rule a player has to be able to feel, not read:
+
+| Contact | Class | Result |
+|---|---|---|
+| Any light **same-direction** vehicle — clipped while passing *or* rear-ended | light | −35% speed 1.5s, combo reset, shake, **0.8s grace** so one contact can't chain |
+| Brick thrown by the mob (§4.5.1) | light | as above |
+| Pothole / open manhole | light | as above, plus 0.4s steering wobble |
+| **Oncoming** vehicle | hard | down |
+| Anything on a **heavy** footprint — car, truck, oversized load, cargo trike | hard | down |
+| **Static** obstacle — wedding tent frame, pole, barrier | hard | down |
+| Shouldered off the road edge by traffic police (§4.5.2) | hard | down |
+| The **N-th light hit inside 5s**, where N is the level's allowance (§6.3) | hard | down |
+
+**What decides it is closing speed, not the angle of the overlap.** The street runs at 4–11 m/s against the player's 10–15, so contact with same-direction traffic is a bump whichever side it lands on; an oncoming vehicle closes at the sum of both speeds and is always a head-on. Making a rear-end fatal is what made the opening unplayable — holding a lane at 10 m/s catches the slower bike ahead within seconds, and that is the most common contact in the game and the one a beginner has to be allowed to learn from.
+
+The light-hit allowance is the **one difficulty knob that is allowed to differ per player level** — a Learner gets 5, a Legend gets 2. Everything else about the contact rule is constant, so the *skill* being taught never changes.
+
 ### 4.2 Speed & difficulty
 
 Base speed follows a saturating curve over distance:
@@ -132,6 +149,29 @@ speed(d) = minSpeed + (maxSpeed - minSpeed) * (1 - exp(-d / 1400))
 ```
 
 `spawnDensity` and `pursuerAggression` use separate `AnimationCurve` fields so a designer can hand-shape them in the Inspector.
+
+#### 4.2.1 Two axes, multiplied
+
+Distance alone is not enough: a first-time player and a veteran both start every run at 0 m, and the veteran wants the street busy sooner. So difficulty is **the product of two axes**:
+
+```
+effectiveDensity    = phaseDensity(distance)    * bandDensity(playerLevel)    * timeOfDayDensity
+effectiveAggression = phaseAggression(distance) * bandAggression(playerLevel) * timeOfDayAggression
+rosterAllowed       = phaseRoster(distance)     AND bandRoster(playerLevel)
+ambientPolice       ≤ timeOfDayPoliceCap
+```
+
+- **Phase** (this axis is per-run, above): the four phases of the table. Every run, for everyone, starts in *Back Lanes* — sparse, no pursuit, street mutts only. That opening is the tutorial and it is never skipped.
+- **Band** (this axis is per-player, §6.3): the ceiling the phases climb toward. A Learner's run tops out at roughly a third of full density and never sees a pursuer; a Legend's reaches full density inside phase 2.
+- **Time of day** (per run, a softer third factor): each run rolls day or night with the **band's** night chance (§6.3 table). **Night is the quiet street** — a `TimeOfDayProfile` carries a traffic-density multiplier (night ×0.70), a pursuit-aggression multiplier (night ×0.65) and a cap on ambient police (night: 1). Day is the reference street at ×1. Because levels 1–4 (Learner and Rookie) roll night **every** run, the first levels are played in a sleepy night city with few bikes and at most one cop; the busy daylight rush is something the level earns. Night never disappears entirely — it is the game's look (§8).
+
+The roster gate is an **intersection**: a vehicle or dog type appears only when the phase *and* the level both allow it. This is what stops "vào game là chết" — not a slower speed ramp, but an opening minute with two bikes on screen instead of seven.
+
+**Ramp-in requirements** (the parts that were specified but never built):
+
+- `RunDirector` samples both axes each frame and is the **only** thing that decides how many vehicles are active, which types are allowed, and what aggression `PursuitDirector` runs at. Traffic instances are enabled and disabled from the existing recycling pool — no `Instantiate` during a run (§9.1).
+- **First 12 seconds of any run are pursuit-free** regardless of heat, so a snatch in the opening cannot immediately summon a mob.
+- Density changes are **stepped, not continuous** — a new vehicle activates at most every 1.5s, so the street fills up visibly rather than popping in.
 
 ### 4.3 Targets — Dogs
 
@@ -268,7 +308,52 @@ Main Menu ─┬─ PLAY      (into a run in < 2 taps)
 
 **Economy rule:** every upgrade has a downside. There are no strictly-better purchases. Players build toward a style — *safe farming* vs *high-risk, high-yield*.
 
-### 6.3 Monetisation (post-launch, not in v1)
+### 6.3 Progression — Levels, XP & Missions
+
+The run stays **endless**. What progresses is the player: a **Level** that (a) sets the difficulty band of §4.2.1 and (b) unlocks roster. Levels come from **XP**, and XP comes mostly from **missions**, so the ladder is climbed by *playing deliberately*, not by grinding distance.
+
+```
+runXp       = floor(runScore / 10) + Σ(mission XP completed during the run)
+xpToNext(L) = 250 + 150 * (L - 1)          // L1→2 = 250, L10→11 = 1600
+```
+
+Score XP is a deliberate trickle: a player who ignores missions still levels, just ~3× slower.
+
+**Level bands** — the ceiling the in-run phases climb toward:
+
+| Level | Band | Density | Pursuit | Light hits | Night | Unlocked at this band |
+|---|---|---|---|---|---|---|
+| 1–2 | *Learner* | ×0.35 | ×0 — none | 5 | 100% | Same-direction commuter bikes, Street Mutt |
+| 3–4 | *Rookie* | ×0.50 | ×0.50 | 4 | 100% | + oncoming bikes, + cars, + Phu Quoc Ridgeback |
+| 5–7 | *Snatcher* | ×0.70 | ×0.75 | 3 | 65% | + Ninja Lead, + ★ Locals, + Chained Yard Dog |
+| 8–11 | *Wanted* | ×0.85 | ×1.00 | 3 | 50% | + trucks / oversized loads, + ★★ Traffic Police, + Husky |
+| 12–15 | *Hunted* | ×1.00 | ×1.15 | 3 | 40% | + ★★★ Order Patrol + roadblocks, + Police K9 |
+| 16+ | *Legend* | ×1.00 | ×1.30 | 2 | 34% | Everything; aggression keeps creeping |
+
+**Night** is the chance a run at this band opens at night (§4.2.1). Night streets run at ×0.70 traffic, ×0.65 pursuit and at most one ambient cop, so the ladder reads: *learn in the dark, get busted in daylight.* Levels 1–4 are always night; the first daylight run can only happen from level 5. The chance only ever falls with level — daylight is earned, never taken back.
+
+Note where the **Police K9** sits: level 12. Punishing a beginner for a read they were never taught is the opposite of a ramp. Same logic puts the Ninja Lead — "the most dangerous thing in the game" (§4.4) — at level 5, not level 1.
+
+**Missions**: **3 active slots**. Each is drawn from the pool the current band allows. Progress **accumulates across runs**, so a run that ends in 20 seconds is never wasted. Completing one awards its XP immediately (HUD toast + a line on the Game Over panel) and rolls a replacement.
+
+| Mission | Example target | XP | Requires |
+|---|---|---|---|
+| Snatch | 8 dogs | 120 | — |
+| Distance | 900 m | 100 | — |
+| Survive | 60 s | 90 | — |
+| Clean stretch | 400 m without contact | 150 | §4.1 light contact |
+| Combo | reach ×2.5 | 140 | — |
+| Shake them off | reach ★ and lose it | 200 | band ≥ *Snatcher* |
+| Deliver | 2 deliveries | 180 | Drop Points (M3) |
+| Karma | 3 pursuers wreck themselves | 160 | pursuers (M2) |
+| Full house | deliver a full crate | 250 | crate + Drop Points |
+
+**Two rules that are not negotiable:**
+
+1. **A new band applies at the start of the next run**, never mid-run. XP and mission ticks are live; difficulty must never shift under the player's hands.
+2. **The band only ever moves up.** No hidden rubber-banding on death — a player who notices the game quietly pitying them is a player who stops respecting it. If a ramp-down is ever wanted it must be an explicit menu choice.
+
+### 6.4 Monetisation (post-launch, not in v1)
 
 - Opt-in ads: watch to ×2 end-of-run score, or to revive.
 - IAP: remove-ads bundle, character skins (poncho, jelly sandals, pith helmet).
@@ -365,7 +450,13 @@ Four layers: road surface (1.0×), sidewalk + hazards (1.0×), buildings (0.85×
 | Class | Responsibility |
 |---|---|
 | `GameManager` | State machine `Boot → Menu → Playing → Paused → GameOver`. No gameplay logic. |
-| `RunDirector` | Owns one run: tracks distance, samples `DifficultyCurve`, drives the spawners. |
+| `RunDirector` | Owns one run: tracks distance, samples the **phase × band** product of §4.2.1, and is the only thing that activates traffic, gates the roster and sets pursuit aggression. |
+| `DifficultyPhaseSet` | SO: the four phases of §4.2 — distance range, density, roster flags, aggression. |
+| `ProgressionAsset` | SO: the level-band table and XP curve of §6.3. |
+| `MissionDefinition` / `MissionPool` | SO: one mission's type, target and XP; the pool a band may draw from. |
+| `ProgressionService` | Plain C#: level, XP, the 3 active mission slots and their progress. Persisted by `SaveService`, versioned. |
+| `MissionTracker` | In-run: listens to the score / dog / wanted / distance channels, ticks mission progress, raises completion. |
+| `PlayerImpact` + `ImpactLedger` | Classifies a contact hard or light (§4.1), applies the speed cut, counts light hits inside the 5s window against the band's allowance. |
 | `RoadStreamer` | Pools and stitches `RoadChunk`s ahead of and behind the camera. |
 | `PlayerBike` | Input, lane transitions, speed, collisions, state (`Normal / Stunned / Nitro / Invulnerable`). |
 | `SnarePole` | Swing animation, cone hitbox, catch window, cooldown. |
@@ -406,13 +497,13 @@ Vector-cartoon note: flat art atlases beautifully. Budget breaks come from too m
 
 ## 10. Roadmap
 
-### Milestone 1 — *Grey-box Vertical Slice* ← current target
+### Milestone 1 — *Grey-box Vertical Slice*
 White boxes, no art. Answers one question: **is "ride the outer lane to snatch" actually fun?**
-- [ ] `RoadStreamer` + chunk pooling, endless road
-- [ ] `PlayerBike`: 4 lanes, swipe steering, ramping speed
-- [ ] `SnarePole` + `Dog` (street mutt only) + scoring
-- [ ] 2 traffic types + lethal collision
-- [ ] Game Over + restart
+- [ ] `RoadStreamer` + chunk pooling, endless road — *shipped instead as a scrolling ground strip + streamed props*
+- [x] `PlayerBike`: free lateral steering (not lane-snap), swipe/hold steering, ramping speed
+- [x] `SnarePole` + `Dog` (street mutt only) + scoring
+- [x] 2 traffic types + lethal collision
+- [x] Game Over + restart
 
 ### Milestone 2 — *Pursuit*
 - [ ] `HeatSystem` + star HUD
@@ -420,6 +511,13 @@ White boxes, no art. Answers one question: **is "ride the outer lane to snatch" 
 - [ ] `TrafficPolicePursuer` (danger ring, shoulder-check)
 - [ ] Alleys + wedding tents
 - [ ] Combo + bonuses
+
+### Milestone 2.5 — *Ramp & Progression* ← current target
+The answer to "vào game đã quá khó": the difficulty data existed, nothing consumed it.
+- [ ] `RunDirector`: phase × band density, roster gating, stepped activation, pursuit-free opening (§4.2.1)
+- [ ] `PlayerImpact`: light vs hard contact, 5s window, per-band allowance (§4.1)
+- [ ] `ProgressionService` + save: XP, levels, bands (§6.3)
+- [ ] `MissionTracker`: 3 slots, cross-run progress, HUD strip, XP + level-up on the Game Over panel
 
 ### Milestone 3 — *Full Loop*
 - [ ] `OrderPatrolPursuer` + roadblocks + nitro

@@ -40,6 +40,11 @@ namespace DogSnatcher.Gameplay
         [Tooltip("Optional. Fed this bike's world speed each frame so its exhaust/dust trail matches motion.")]
         [SerializeField] private MotorbikeRideVFX rideVfx;
 
+        [Tooltip("Optional. What the run currently allows on the street (GDD 4.2.1). While it " +
+                 "withholds oncoming bikes, every respawn rolls same-direction - a beginner's " +
+                 "street has nothing coming at them. Empty = anything goes, as before.")]
+        [SerializeField] private RosterChannel roster;
+
         [Header("Tuning")]
         [Tooltip("Chance a new encounter is same-direction traffic rather than oncoming.")]
         [SerializeField, Range(0f, 1f)] private float sameDirectionChance = 0.55f;
@@ -169,7 +174,12 @@ namespace DogSnatcher.Gameplay
             lastAheadGap = float.MaxValue;
             laneSettleTimer = 0f;
 
-            encounter = rng.NextDouble() < sameDirectionChance ? Encounter.SameDirection : Encounter.Oncoming;
+            // Draw unconditionally so the seeded sequence doesn't depend on the roster, then let
+            // the roster veto: a band without oncoming bikes turns that roll into more traffic
+            // going the player's way rather than skipping a draw.
+            bool rolledOncoming = rng.NextDouble() >= sameDirectionChance;
+            bool oncomingAllowed = roster == null || roster.Allows(RosterFlags.OncomingBikes);
+            encounter = rolledOncoming && oncomingAllowed ? Encounter.Oncoming : Encounter.SameDirection;
             baseSpeed = RangeValue(encounter == Encounter.SameDirection ? sameDirectionSpeedRange : oncomingSpeedRange);
             wobblePhase = (float)(rng.NextDouble() * Mathf.PI * 2.0);
 

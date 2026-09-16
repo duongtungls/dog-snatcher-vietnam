@@ -18,3 +18,6 @@ MonoBehaviour:
   groundTint: {r: 0.22, g: 0.245, b: 0.35, a: 1}
   skyColor: {r: 0.025, g: 0.03, b: 0.06, a: 1}
   headlightsOn: 1
+  trafficDensityScale: 0.7
+  pursuitAggressionScale: 0.65
+  maxAmbientPolice: 1

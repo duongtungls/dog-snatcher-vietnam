@@ -105,3 +105,19 @@ MonoBehaviour:
     text: LUCKY
   - key: hud.backToMenu
     text: MENU
+  - key: hud.level
+    text: LV {0}
+  - key: mission.snatch
+    text: SNATCH {0} DOGS
+  - key: mission.distance
+    text: RIDE {0} M
+  - key: mission.survive
+    text: SURVIVE {0} S
+  - key: mission.clean
+    text: CLEAN {0} M
+  - key: mission.combo
+    text: REACH COMBO x{0}
+  - key: mission.shake
+    text: SHAKE OFF THE COPS x{0}
+  - key: gameover.xp
+    text: +{0} XP    LV {1}

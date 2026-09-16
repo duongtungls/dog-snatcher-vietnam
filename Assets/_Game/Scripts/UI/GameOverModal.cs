@@ -27,6 +27,15 @@ namespace DogSnatcher.UI
         [SerializeField] private Sprite policeArrestedSprite;
         [SerializeField] private Sprite ninjaLeadSprite;
 
+        [Header("Progression (GDD 6.3)")]
+        [Tooltip("Optional. Read for what the run was worth - by the time the modal reveals, " +
+                 "ProgressionDirector has already folded the score into XP.")]
+        [SerializeField] private ProgressionChannel progression;
+        [SerializeField] private StringTableAsset strings;
+        [Tooltip("Line under the card. {0} = XP the run earned, {1} = level now.")]
+        [SerializeField] private Text xpLine;
+        [SerializeField] private string xpKey = "gameover.xp";
+
         [Header("Refs")]
         [Tooltip("Root object shown/hidden - the backdrop + card.")]
         [SerializeField] private GameObject panel;
@@ -91,6 +100,7 @@ namespace DogSnatcher.UI
             {
                 pending = false;
                 ApplyCaseArtwork();
+                ApplyRunReward();
                 if (panel != null) panel.SetActive(true);
             }
 
@@ -110,6 +120,31 @@ namespace DogSnatcher.UI
                 RunLifecycleChannel.CrashCause.NinjaLead => ninjaLeadSprite,
                 _ => normalCrashSprite,
             };
+        }
+
+        /// <summary>
+        /// What the run was worth on the ladder (GDD 6.3) - the score share plus whatever missions
+        /// paid out mid-run, and the level that leaves the player on. Hidden when there is nothing
+        /// to report, so the card is never captioned "+0 XP".
+        /// </summary>
+        private void ApplyRunReward()
+        {
+            if (xpLine == null) return;
+
+            int gained = progression != null ? progression.LastScoreXp + progression.LastMissionXp : 0;
+            if (progression == null || gained <= 0)
+            {
+                xpLine.gameObject.SetActive(false);
+                return;
+            }
+
+            string template = strings != null ? strings.Get(xpKey) : xpKey;
+            if (string.IsNullOrEmpty(template)) template = xpKey;
+
+            xpLine.text = template
+                .Replace("{0}", gained.ToString())
+                .Replace("{1}", progression.Level.ToString());
+            xpLine.gameObject.SetActive(true);
         }
 
         /// <summary>Repeat button. Clears the run state and reloads the scene from scratch.</summary>

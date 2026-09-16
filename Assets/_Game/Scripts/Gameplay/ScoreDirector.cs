@@ -20,6 +20,10 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private SnarePole snarePole;
         [SerializeField] private RunLifecycleChannel lifecycle;
 
+        [Tooltip("Optional. GDD 4.1/5: a light contact resets the combo, same as a crash used to " +
+                 "be the only way to lose it.")]
+        [SerializeField] private ImpactChannel impact;
+
         [Header("Scoring")]
         [Tooltip("Points a dog with no DogDefinition is worth (grey-box street mutt).")]
         [SerializeField, Min(0)] private int fallbackDogPoints = 50;
@@ -52,12 +56,14 @@ namespace DogSnatcher.Gameplay
             if (score != null) score.ResetRun();
             if (snarePole != null) snarePole.DogSnatched += OnDogSnatched;
             if (lifecycle != null) lifecycle.Crashed += ResetCombo;
+            if (impact != null) impact.LightHit += ResetCombo;
         }
 
         private void OnDisable()
         {
             if (snarePole != null) snarePole.DogSnatched -= OnDogSnatched;
             if (lifecycle != null) lifecycle.Crashed -= ResetCombo;
+            if (impact != null) impact.LightHit -= ResetCombo;
         }
 
         private void Update()

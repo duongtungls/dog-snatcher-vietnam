@@ -13,9 +13,11 @@ namespace DogSnatcher.Gameplay
     ///    evenly, clamped to the asphalt and to a small step per frame so it reads as a nudge;
     ///  - a car holds its line - only the lighter vehicle gives way;
     ///  - a static hazard (wedding tent) never gives way - whatever overlapped it is shoved off;
-    ///  - the player overlapping anything ends the run through <see cref="RunLifecycleChannel"/> -
-    ///    unless the Lucky Charm (GDD §6.2, HUD button) is active, in which case the crash is
-    ///    skipped entirely for as long as <see cref="luckyCharm"/>'s active window lasts.
+    ///  - the player overlapping something asks <see cref="PlayerImpact"/> what it costs (GDD
+    ///    §4.1): a side scrape against light, same-direction traffic is shrugged off as a light
+    ///    hit and shoved apart like any other pair, while a hard hit ends the run through
+    ///    <see cref="RunLifecycleChannel"/> - unless the Lucky Charm (GDD §6.2, HUD button) is
+    ///    active, in which case the crash is skipped entirely for as long as its window lasts.
     ///
     /// The push is transient - a lane-keeping rider steers back to its lane next frame - so this
     /// is a safety net under the lane-avoid AI in TrafficRider / PoliceAmbientPatrol, not the
@@ -30,6 +32,10 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private WantedLevelChannel wanted;
         [Tooltip("Optional. While this consumable's active window is running, a player collision never ends the run.")]
         [SerializeField] private ConsumableChannel luckyCharm;
+
+        [Tooltip("The player's contact rule (GDD 4.1). Without it every player overlap is fatal, " +
+                 "which is the behaviour this had before light contact existed.")]
+        [SerializeField] private PlayerImpact playerImpact;
 
         [Tooltip("Most a bike can be shoved in one frame, metres - keeps a shove from teleporting.")]
         [SerializeField, Min(0.01f)] private float maxStepPerFrame = 0.5f;
@@ -60,37 +66,54 @@ namespace DogSnatcher.Gameplay
 
                     if (a.IsPlayer || b.IsPlayer)
                     {
-                        if (lifecycle != null && (luckyCharm == null || !luckyCharm.IsActive))
+                        var other = a.IsPlayer ? b : a;
+
+                        // GDD 4.1: not every touch is fatal. PlayerImpact rules on this one; a
+                        // survivable scrape falls through to the ordinary shove so the player is
+                        // knocked off their line instead of being left inside the other bike.
+                        if (playerImpact != null && playerImpact.TryAbsorb(other))
                         {
-                            var other = a.IsPlayer ? b : a;
-                            lifecycle.Crash(ClassifyCrash(other));
+                            Shove(a, b, ca, cb, dx, dz, overlapX, overlapZ);
+                            continue;
                         }
+
+                        if (lifecycle != null && (luckyCharm == null || !luckyCharm.IsActive))
+                            lifecycle.Crash(ClassifyCrash(other));
                         continue;
                     }
 
                     if (a.IsStatic && b.IsStatic) continue;           // two immovables, nothing to do
 
-                    // A static hazard, then a car, holds its line; the other side gives way in
-                    // full. Two of a kind split the correction evenly.
-                    float shareA = 0.5f, shareB = 0.5f;
-                    if (a.IsStatic || (a.Heavy && !b.Heavy)) { shareA = 0f; shareB = 1f; }
-                    else if (b.IsStatic || (b.Heavy && !a.Heavy)) { shareA = 1f; shareB = 0f; }
-
-                    if (overlapX <= overlapZ)
-                    {
-                        float dir = dx >= 0f ? 1f : -1f;
-                        float total = Mathf.Min(overlapX, maxStepPerFrame * 2f);
-                        a.SetLocalX(ClampX(a, ca.x - dir * total * shareA));
-                        b.SetLocalX(ClampX(b, cb.x + dir * total * shareB));
-                    }
-                    else
-                    {
-                        float dir = dz >= 0f ? 1f : -1f;
-                        float total = Mathf.Min(overlapZ, maxStepPerFrame * 2f);
-                        a.SetLocalZ(ca.z - dir * total * shareA);
-                        b.SetLocalZ(cb.z + dir * total * shareB);
-                    }
+                    Shove(a, b, ca, cb, dx, dz, overlapX, overlapZ);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Push two overlapping footprints apart along their shallowest axis. A static hazard,
+        /// then a car, holds its line and the other side gives way in full; two of a kind split
+        /// the correction evenly. Clamped to a small step per frame so it reads as a nudge.
+        /// </summary>
+        private void Shove(RiderFootprint a, RiderFootprint b, Vector3 ca, Vector3 cb,
+                           float dx, float dz, float overlapX, float overlapZ)
+        {
+            float shareA = 0.5f, shareB = 0.5f;
+            if (a.IsStatic || (a.Heavy && !b.Heavy)) { shareA = 0f; shareB = 1f; }
+            else if (b.IsStatic || (b.Heavy && !a.Heavy)) { shareA = 1f; shareB = 0f; }
+
+            if (overlapX <= overlapZ)
+            {
+                float dir = dx >= 0f ? 1f : -1f;
+                float total = Mathf.Min(overlapX, maxStepPerFrame * 2f);
+                a.SetLocalX(ClampX(a, ca.x - dir * total * shareA));
+                b.SetLocalX(ClampX(b, cb.x + dir * total * shareB));
+            }
+            else
+            {
+                float dir = dz >= 0f ? 1f : -1f;
+                float total = Mathf.Min(overlapZ, maxStepPerFrame * 2f);
+                a.SetLocalZ(ca.z - dir * total * shareA);
+                b.SetLocalZ(cb.z + dir * total * shareB);
             }
         }
 

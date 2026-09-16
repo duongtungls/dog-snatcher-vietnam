@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46bed272418954f199a3d11d731ac451, type: 3}
+  m_Name: Progression
+  m_EditorClassIdentifier: 
+  baseXpToNext: 250
+  xpStepPerLevel: 150
+  scorePerXp: 10
+  maxLevel: 60
+  bands:
+  - name: Learner
+    fromLevel: 1
+    densityScale: 0.35
+    aggressionScale: 0
+    lightHitAllowance: 5
+    roster: 1
+    nightChance: 1
+  - name: Rookie
+    fromLevel: 3
+    densityScale: 0.5
+    aggressionScale: 0.5
+    lightHitAllowance: 4
+    roster: 7
+    nightChance: 1
+  - name: Snatcher
+    fromLevel: 5
+    densityScale: 0.7
+    aggressionScale: 0.75
+    lightHitAllowance: 3
+    roster: 47
+    nightChance: 0.65
+  - name: Wanted
+    fromLevel: 8
+    densityScale: 0.85
+    aggressionScale: 1
+    lightHitAllowance: 3
+    roster: 127
+    nightChance: 0.5
+  - name: Hunted
+    fromLevel: 12
+    densityScale: 1
+    aggressionScale: 1.15
+    lightHitAllowance: 3
+    roster: -1
+    nightChance: 0.4
+  - name: Legend
+    fromLevel: 16
+    densityScale: 1
+    aggressionScale: 1.3
+    lightHitAllowance: 2
+    roster: -1
+    nightChance: 0.34

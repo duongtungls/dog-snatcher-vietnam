@@ -11,7 +11,11 @@ namespace DogSnatcher.Gameplay
     /// then broadcasts it on <see cref="TimeOfDayChannel"/> for the vehicles and the roadside
     /// street lamps to light up.
     ///
-    /// Default is daytime; a night run comes up with probability <see cref="nightChance"/>. The
+    /// A night run comes up with the probability of the player's level band
+    /// (<c>ProgressionAsset.Band.nightChance</c>, GDD 6.3) - a beginner rides only at night, the
+    /// quiet street, and daylight arrives with the level. Without a <see cref="progression"/>
+    /// channel wired, the flat <see cref="nightChance"/> is used instead. The band is the one
+    /// <c>ProgressionDirector</c> snapshotted for this run - it runs first by execution order. The
     /// draw is seeded (CLAUDE.md's reproducible-runs rule): leave <see cref="seed"/> at 0 for a
     /// fresh look each run, or pin it to replay the same day/night sequence for bug repro.
     ///
@@ -50,7 +54,12 @@ namespace DogSnatcher.Gameplay
         [SerializeField] private TimeOfDayProfile dayProfile;
         [SerializeField] private TimeOfDayProfile nightProfile;
 
-        [Tooltip("Chance a run comes up night rather than day.")]
+        [Header("Progression")]
+        [Tooltip("When set, the night chance comes from the player's level band (GDD 6.3): " +
+                 "beginners ride at night, the busy daylight street arrives with the level.")]
+        [SerializeField] private ProgressionChannel progression;
+
+        [Tooltip("Chance a run comes up night rather than day when no progression channel is wired.")]
         [SerializeField, Range(0f, 1f)] private float nightChance = 0.34f;
 
         [Tooltip("0 = a new roll every run. Non-zero = deterministic day/night sequence, keyed to " +
@@ -134,7 +143,8 @@ namespace DogSnatcher.Gameplay
                 ? UnityEngine.Random.value
                 : new System.Random(unchecked(seed * 1000003 + runIndex)).NextDouble();
 
-            return roll < nightChance ? nightProfile : dayProfile;
+            float chance = progression != null ? progression.RunBand.nightChance : nightChance;
+            return roll < chance ? nightProfile : dayProfile;
         }
 
         private void Apply(TimeOfDayProfile profile)

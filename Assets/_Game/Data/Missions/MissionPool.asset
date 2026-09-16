@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3005c43930518acef9c42c48876e8189, type: 3}
+  m_Name: MissionPool
+  m_EditorClassIdentifier: 
+  missions:
+  - {fileID: 11400000, guid: 4fa08b53700f58a0eb0b0ce3b3467ef0, type: 2}
+  - {fileID: 11400000, guid: 381394b8b1693f6deb4c470d68dc0bcd, type: 2}
+  - {fileID: 11400000, guid: e35ee3430885a469d8b6ed062ab52249, type: 2}
+  - {fileID: 11400000, guid: 4203eb96d883ba1569e4110e6757fee2, type: 2}
+  - {fileID: 11400000, guid: 21e81d9f2818fe44a8decf976d03f6ca, type: 2}
+  - {fileID: 11400000, guid: 3f82dc4bef71da74c854f46222eb135b, type: 2}
+  - {fileID: 11400000, guid: 9742d6e5fec5dcf77be74dea07b3d2e5, type: 2}
+  - {fileID: 11400000, guid: 81d56d0dac99aa8899e95135b8810cb4, type: 2}
+  - {fileID: 11400000, guid: 6f42a51d23c4b2d6984a984e580ae3bb, type: 2}
+  - {fileID: 11400000, guid: c904b59239479de1e9aed86215de6b0c, type: 2}

@@ -9,7 +9,8 @@ namespace DogSnatcher.Spawning
     ///
     /// The player can shed a slice of that speed by holding the touch "back" zone / the S key -
     /// <see cref="PlayerSteering"/> writes <see cref="BrakeChannel"/>, this scales the curve
-    /// speed by up to <see cref="maxBrakeFraction"/>. In the other direction, spending a Nitro
+    /// speed by up to <see cref="maxBrakeFraction"/>. A light contact (GDD 4.1) takes another
+    /// slice off through <see cref="ImpactChannel"/>. In the other direction, spending a Nitro
     /// charge (GDD §6.2, HUD button) sets <see cref="nitro"/>'s active window - while it's active
     /// the curve speed is boosted by <see cref="nitroBoostFraction"/>. Brake and nitro can't both
     /// be true at once in practice (braking cancels a run), but if they were, brake is applied
@@ -41,6 +42,11 @@ namespace DogSnatcher.Spawning
 
         [Tooltip("Fraction of the curve speed shed at full brake. 0.45 = the bike can drop to 55% of pace.")]
         [SerializeField, Range(0f, 0.9f)] private float maxBrakeFraction = 0.45f;
+
+        [Header("Light contact")]
+        [Tooltip("Optional. GDD 4.1: a light hit withholds a slice of run speed for a moment - " +
+                 "losing speed is the punishment, because it is how you get caught.")]
+        [SerializeField] private ImpactChannel impact;
 
         [Header("Nitro")]
         [Tooltip("Optional. Nitro consumable (HUD button) - while its active window is running, speed is boosted.")]
@@ -94,6 +100,7 @@ namespace DogSnatcher.Spawning
 
             currentSpeed = target * launch;
             if (brake != null) currentSpeed *= 1f - brake.Brake01 * maxBrakeFraction;
+            if (impact != null) currentSpeed *= 1f - impact.SpeedPenalty01;
             if (nitro != null && nitro.IsActive) currentSpeed *= 1f + nitroBoostFraction;
             speedChannel.Advance(currentSpeed, dt);
         }
