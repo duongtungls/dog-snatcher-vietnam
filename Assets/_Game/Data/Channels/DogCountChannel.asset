@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 731d36b8d53d0033090b680b856273c4, type: 3}
   m_Name: DogCountChannel
   m_EditorClassIdentifier: 
+  target: 50

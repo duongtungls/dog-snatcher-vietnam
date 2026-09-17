@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.ivanmurzak.unity.mcp": {
-      "version": "0.90.0",
+      "version": "0.91.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -273,6 +273,15 @@
       "dependencies": {
         "com.unity.services.core": "1.13.0",
         "com.unity.services.authentication": "3.3.3"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.levelplay": {
+      "version": "9.5.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.services.core": "1.15.1"
       },
       "url": "https://packages.unity.com"
     },

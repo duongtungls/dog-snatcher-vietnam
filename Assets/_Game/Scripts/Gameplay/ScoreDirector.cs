@@ -7,7 +7,8 @@ namespace DogSnatcher.Gameplay
     /// Turns snatches into points, combo and coins (GDD §5). Listens to
     /// <see cref="SnarePole.DogSnatched"/>: each catch adds <c>dogPoints x comboMultiplier</c> to
     /// <see cref="ScoreChannel"/>, bumps the combo, and drops a few coins. The combo lapses back
-    /// to x1 if no dog is caught within <see cref="comboWindowSeconds"/>, and on a crash.
+    /// to x1 if no dog is caught within <see cref="comboWindowSeconds"/>, and on a crash or a
+    /// successful completion.
     ///
     /// The one non-idle per-frame cost is a float countdown. No allocation.
     /// </summary>
@@ -55,14 +56,22 @@ namespace DogSnatcher.Gameplay
             comboLeft = 0f;
             if (score != null) score.ResetRun();
             if (snarePole != null) snarePole.DogSnatched += OnDogSnatched;
-            if (lifecycle != null) lifecycle.Crashed += ResetCombo;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed += ResetCombo;
+                lifecycle.Completed += ResetCombo;
+            }
             if (impact != null) impact.LightHit += ResetCombo;
         }
 
         private void OnDisable()
         {
             if (snarePole != null) snarePole.DogSnatched -= OnDogSnatched;
-            if (lifecycle != null) lifecycle.Crashed -= ResetCombo;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed -= ResetCombo;
+                lifecycle.Completed -= ResetCombo;
+            }
             if (impact != null) impact.LightHit -= ResetCombo;
         }
 

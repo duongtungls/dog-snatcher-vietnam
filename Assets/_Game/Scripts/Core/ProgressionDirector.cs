@@ -11,8 +11,8 @@ namespace DogSnatcher.Core
     /// freezes the difficulty band for this run. Everything that scales difficulty reads that
     /// snapshot, so a level earned mid-run changes nothing until the next one.
     ///
-    /// On the crash that ends the run: folds the run's score into XP and writes the ladder back.
-    /// Mission XP is banked the moment a mission completes (the tracker calls
+    /// On the crash or completion that ends the run: folds the run's score into XP and writes
+    /// the ladder back. Mission XP is banked the moment a mission completes (the tracker calls
     /// <see cref="ProgressionChannel.AddRunXp"/>), so it is also flushed here and on disable -
     /// a player who closes the app mid-run keeps what they had already finished.
     ///
@@ -44,12 +44,20 @@ namespace DogSnatcher.Core
             progression.BeginRun();
             committed = false;
 
-            if (lifecycle != null) lifecycle.Crashed += OnCrashed;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed += OnRunEnded;
+                lifecycle.Completed += OnRunEnded;
+            }
         }
 
         private void OnDisable()
         {
-            if (lifecycle != null) lifecycle.Crashed -= OnCrashed;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed -= OnRunEnded;
+                lifecycle.Completed -= OnRunEnded;
+            }
             Flush();
         }
 
@@ -58,7 +66,7 @@ namespace DogSnatcher.Core
             if (paused) Flush();
         }
 
-        private void OnCrashed()
+        private void OnRunEnded()
         {
             if (committed || progression == null) return;
             committed = true;

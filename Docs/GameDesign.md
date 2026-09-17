@@ -28,6 +28,13 @@ This is **satire**, not simulation. The whole experience is cartoon comedy — c
 
 **Target rating:** Google Play `Teen` / App Store `12+`. No blood, no adult content.
 
+> **Addendum — second ending (added post-Milestone 1):** a run can now also end in a genuine
+> success — reaching the dog quota (`DogCountChannel.Target`) triggers `RunLifecycleChannel.Completed`
+> and a **Level Complete** modal (coins / dogs / distance / XP recap, HOME / NEXT LEVEL), instead of
+> the crash-only **Game Over** modal. This is a deliberate divergence from "every run ends in
+> failure" above, approved to give skilled play a real win state; the failure path, tone rules and
+> Drop Point framing are unchanged for the runs that do end in a bust.
+
 ---
 
 ## 1. Core Loop

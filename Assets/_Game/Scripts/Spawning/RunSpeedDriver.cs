@@ -16,9 +16,9 @@ namespace DogSnatcher.Spawning
     /// be true at once in practice (braking cancels a run), but if they were, brake is applied
     /// first and nitro multiplies what's left.
     ///
-    /// When the run ends in a crash (<see cref="RunLifecycleChannel"/>) it brakes the run speed
-    /// to a stop over <see cref="crashBrakeTime"/> so the whole world glides to a halt rather
-    /// than freezing on the spot.
+    /// When the run ends - either a crash or a successful completion (<see cref="RunLifecycleChannel"/>) -
+    /// it brakes the run speed to a stop over <see cref="crashBrakeTime"/> so the whole world
+    /// glides to a halt rather than freezing on the spot.
     ///
     /// Set <see cref="cruiseSpeedOverride"/> to hold a fixed speed and ignore the curve - the
     /// menu scene uses that for a slow chill cruise behind the UI.
@@ -56,7 +56,7 @@ namespace DogSnatcher.Spawning
         [SerializeField, Min(0f)] private float nitroBoostFraction = 0.6f;
 
         [Header("Lifecycle")]
-        [Tooltip("Optional. When the run crashes the speed brakes to zero over the time below.")]
+        [Tooltip("Optional. When the run ends (crash or completion) the speed brakes to zero over the time below.")]
         [SerializeField] private RunLifecycleChannel lifecycle;
 
         [SerializeField, Min(0.05f)] private float crashBrakeTime = 0.8f;
@@ -83,7 +83,7 @@ namespace DogSnatcher.Spawning
 
             float dt = Time.deltaTime;
 
-            if (lifecycle != null && lifecycle.IsCrashed)
+            if (lifecycle != null && (lifecycle.IsCrashed || lifecycle.IsCompleted))
             {
                 if (brakeFrom < 0f) brakeFrom = Mathf.Max(currentSpeed, 0.01f);
                 currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, brakeFrom / crashBrakeTime * dt);

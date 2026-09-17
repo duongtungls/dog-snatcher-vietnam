@@ -1,3 +1,4 @@
+using DogSnatcher.Core;
 using DogSnatcher.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -32,9 +33,21 @@ namespace DogSnatcher.UI
                  "ProgressionDirector has already folded the score into XP.")]
         [SerializeField] private ProgressionChannel progression;
         [SerializeField] private StringTableAsset strings;
+
+        [Header("Lives")]
+        [Tooltip("Optional. Out of lives on Repeat shows the buy-lives panel instead of reloading " +
+                 "the run - falls back to sending the player to the menu when that panel isn't wired.")]
+        [SerializeField] private LivesChannel lives;
+        [Tooltip("Optional. The buy-lives panel shown when Repeat is pressed at 0 lives.")]
+        [SerializeField] private GameObject buyLivesModal;
         [Tooltip("Line under the card. {0} = XP the run earned, {1} = level now.")]
         [SerializeField] private Text xpLine;
         [SerializeField] private string xpKey = "gameover.xp";
+
+        [Header("Ads")]
+        [Tooltip("Optional. Shown before the run reloads, every time - not shown when the player " +
+                 "is out-of-lives and gets redirected to the menu instead.")]
+        [SerializeField] private InterstitialAdService interstitial;
 
         [Header("Refs")]
         [Tooltip("Root object shown/hidden - the backdrop + card.")]
@@ -147,13 +160,26 @@ namespace DogSnatcher.UI
             xpLine.gameObject.SetActive(true);
         }
 
-        /// <summary>Repeat button. Clears the run state and reloads the scene from scratch.</summary>
+        /// <summary>
+        /// Repeat button. Clears the run state and reloads the scene from scratch - unless the
+        /// player is out of lives, in which case it shows the buy-lives panel over this card
+        /// instead (falls back to sending them to the menu if that panel was never wired).
+        /// </summary>
         public void Restart()
         {
             if (wantedLevel != null) wantedLevel.SetStars(0);
             if (lifecycle != null) lifecycle.ResetRun();
             Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            if (lives != null && lives.Current <= 0)
+            {
+                if (buyLivesModal != null) buyLivesModal.SetActive(true);
+                else SceneManager.LoadScene(0);
+                return;
+            }
+
+            int buildIndex = SceneManager.GetActiveScene().buildIndex;
+            if (interstitial != null) interstitial.ShowThenContinue(() => SceneManager.LoadScene(buildIndex));
+            else SceneManager.LoadScene(buildIndex);
         }
     }
 }

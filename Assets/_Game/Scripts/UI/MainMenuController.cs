@@ -1,3 +1,5 @@
+using DogSnatcher.Core;
+using DogSnatcher.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -55,12 +57,29 @@ namespace DogSnatcher.UI
         [Tooltip("Buttons that close whichever panel is open (the BACK buttons).")]
         [SerializeField] private Button[] closeButtons;
 
+        [Header("Coins")]
+        [Tooltip("Lifetime coin readout in the top-corner coin frame.")]
+        [SerializeField] private Text coinValue;
+
+        [Header("Lives")]
+        [SerializeField] private LivesChannel lives;
+        [SerializeField] private Text livesValue;
+        [Tooltip("Zero-padded \"mm:ss\" countdown to the next life - reads \"00:00\" while lives are already full.")]
+        [SerializeField] private Text livesNextIn;
+        [Tooltip("Shown instead of loading the run when Play is pressed at 0 lives.")]
+        [SerializeField] private GameObject buyLivesPanel;
+        [Tooltip("Seconds between refreshes of the lives countdown - it only needs to tick once a second.")]
+        [SerializeField, Min(0.1f)] private float livesRefreshInterval = 1f;
+
+        private float livesRefreshAccumulator;
+
         private void Awake()
         {
             bool resume = PlayerPrefs.GetInt(runInProgressPref, 0) != 0;
             SetText(playLabel, Str(resume ? continueKey : playKey, resume ? "CONTINUE" : "PLAY"));
             SetText(leaderboardLabel, Str(leaderboardKey, "LEADERBOARD"));
             SetText(optionsLabel, Str(optionsKey, "OPTIONS"));
+            SetText(coinValue, CoinWalletPrefs.TotalCoins.ToString());
             ApplyPlayArt(resume);
 
             Wire(playButton, Play);
@@ -69,11 +88,26 @@ namespace DogSnatcher.UI
             if (closeButtons != null)
                 foreach (var b in closeButtons) Wire(b, ClosePanels);
 
+            if (lives != null) lives.Load();
+            RefreshLives();
             ClosePanels();
             Time.timeScale = 1f;   // clear a pause left over from a previous run
         }
 
-        public void Play() => SceneManager.LoadScene(gameScene);
+        private void Update()
+        {
+            if (lives == null) return;
+            livesRefreshAccumulator += Time.unscaledDeltaTime;
+            if (livesRefreshAccumulator < livesRefreshInterval) return;
+            livesRefreshAccumulator = 0f;
+            RefreshLives();
+        }
+
+        public void Play()
+        {
+            if (lives != null && lives.Current <= 0) { Show(buyLivesPanel); return; }
+            SceneManager.LoadScene(gameScene);
+        }
 
         public void OpenLeaderboard() => Show(leaderboardPanel);
         public void OpenOptions() => Show(optionsPanel);
@@ -82,6 +116,27 @@ namespace DogSnatcher.UI
         {
             if (leaderboardPanel != null) leaderboardPanel.SetActive(false);
             if (optionsPanel != null) optionsPanel.SetActive(false);
+            if (buyLivesPanel != null) buyLivesPanel.SetActive(false);
+        }
+
+        /// <summary>Re-reads coins and lives into their readouts. Called after a buy-lives purchase too.</summary>
+        public void RefreshWallet()
+        {
+            SetText(coinValue, CoinWalletPrefs.TotalCoins.ToString());
+            RefreshLives();
+        }
+
+        private void RefreshLives()
+        {
+            if (lives == null) return;
+            int current = lives.Current;
+            int max = lives.Max;
+            if (livesValue != null) livesValue.text = current.ToString();
+
+            if (livesNextIn == null) return;
+            bool full = current >= max;
+            int totalSeconds = full ? 0 : Mathf.CeilToInt(lives.SecondsToNextLife);
+            livesNextIn.text = (totalSeconds / 60).ToString("00") + ":" + (totalSeconds % 60).ToString("00");
         }
 
         private void Show(GameObject panel)

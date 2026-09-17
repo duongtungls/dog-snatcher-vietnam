@@ -127,3 +127,29 @@ MonoBehaviour:
     text: Sending your best run...
   - key: leaderboard.status.offline
     text: Offline - showing your best run
+  - key: levelcomplete.coins
+    text: COINS COLLECTED
+  - key: levelcomplete.dogs
+    text: DOGS SNATCHED
+  - key: levelcomplete.distance
+    text: DISTANCE
+  - key: levelcomplete.xp
+    text: EXPERIENCE
+  - key: levelcomplete.coins_value
+    text: '{0}'
+  - key: levelcomplete.dogs_value
+    text: '{0}'
+  - key: levelcomplete.distance_value
+    text: '{0} KM'
+  - key: levelcomplete.xp_value
+    text: +{0}
+  - key: lives.buy_title
+    text: OUT OF LIVES
+  - key: lives.buy_body
+    text: +1 LIFE FOR {0} COINS
+  - key: lives.buy_button
+    text: BUY
+  - key: lives.buy_not_enough
+    text: NOT ENOUGH COINS
+  - key: lives.watch_ad_button
+    text: WATCH AD

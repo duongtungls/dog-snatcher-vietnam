@@ -73,7 +73,11 @@ namespace DogSnatcher.Gameplay
             if (score != null) score.Changed += OnScoreChanged;
             if (wanted != null) wanted.Changed += OnWantedChanged;
             if (impact != null) impact.LightHit += BreakCleanStretch;
-            if (lifecycle != null) lifecycle.Crashed += OnRunEnded;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed += OnRunEnded;
+                lifecycle.Completed += OnRunEnded;
+            }
         }
 
         private void OnDisable()
@@ -82,7 +86,11 @@ namespace DogSnatcher.Gameplay
             if (score != null) score.Changed -= OnScoreChanged;
             if (wanted != null) wanted.Changed -= OnWantedChanged;
             if (impact != null) impact.LightHit -= BreakCleanStretch;
-            if (lifecycle != null) lifecycle.Crashed -= OnRunEnded;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed -= OnRunEnded;
+                lifecycle.Completed -= OnRunEnded;
+            }
 
             SaveSlots();
         }

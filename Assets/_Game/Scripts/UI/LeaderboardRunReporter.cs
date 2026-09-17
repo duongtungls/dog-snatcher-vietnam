@@ -7,14 +7,14 @@ using UnityEngine;
 namespace DogSnatcher.UI
 {
     /// <summary>
-    /// Feeds finished runs into the leaderboard. On the crash that ends a run it records dogs
-    /// snatched + coins as the personal best (<see cref="LeaderboardStore.RecordRun"/>) and, when
-    /// the player has joined the board and beat their best, pushes the new score to Unity Cloud
-    /// right away. If the push cannot happen (offline, not signed in) the store keeps a pending
-    /// flag and the leaderboard screen sends it the next time it opens - nothing is lost.
+    /// Feeds finished runs into the leaderboard. On the crash or completion that ends a run it
+    /// records dogs snatched + coins as the personal best (<see cref="LeaderboardStore.RecordRun"/>)
+    /// and, when the player has joined the board and beat their best, pushes the new score to
+    /// Unity Cloud right away. If the push cannot happen (offline, not signed in) the store keeps
+    /// a pending flag and the leaderboard screen sends it the next time it opens - nothing is lost.
     ///
     /// One per gameplay scene, on an always-on object. Subscribes to the lifecycle channel; no
-    /// per-frame work, and the crash path allocates only for the network call itself.
+    /// per-frame work, and the run-end path allocates only for the network call itself.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LeaderboardRunReporter : MonoBehaviour
@@ -32,15 +32,23 @@ namespace DogSnatcher.UI
         private void OnEnable()
         {
             reported = false;
-            if (lifecycle != null) lifecycle.Crashed += OnCrashed;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed += OnRunEnded;
+                lifecycle.Completed += OnRunEnded;
+            }
         }
 
         private void OnDisable()
         {
-            if (lifecycle != null) lifecycle.Crashed -= OnCrashed;
+            if (lifecycle != null)
+            {
+                lifecycle.Crashed -= OnRunEnded;
+                lifecycle.Completed -= OnRunEnded;
+            }
         }
 
-        private void OnCrashed()
+        private void OnRunEnded()
         {
             if (reported) return;
             reported = true;
