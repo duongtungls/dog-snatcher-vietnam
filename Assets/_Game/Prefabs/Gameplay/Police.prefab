@@ -376,8 +376,8 @@ MonoBehaviour:
   m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 0.75
   m_LocalBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
   m_PointLightInnerRadius: 0.4
@@ -1020,6 +1020,8 @@ MonoBehaviour:
   timeOfDay: {fileID: 11400000, guid: 2e5879abcd0d3f8bc9e75825aa375ea2, type: 2}
   riderVisual: {fileID: 0}
   policeVisual: {fileID: 2589938905540623558}
+  playerVisual: {fileID: 0}
+  maxSteerYaw: 16
   rearSet: {fileID: 8695990243220084359}
   frontSet: {fileID: 3061327590211784500}
 --- !u!1 &7592244509542634791
@@ -1051,7 +1053,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 362364817429066648}

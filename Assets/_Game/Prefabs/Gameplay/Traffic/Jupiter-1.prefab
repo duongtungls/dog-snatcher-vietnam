@@ -692,6 +692,8 @@ MonoBehaviour:
   timeOfDay: {fileID: 11400000, guid: 2e5879abcd0d3f8bc9e75825aa375ea2, type: 2}
   riderVisual: {fileID: 3705922214523694083}
   policeVisual: {fileID: 0}
+  playerVisual: {fileID: 0}
+  maxSteerYaw: 16
   rearSet: {fileID: 7967955264000724324}
   frontSet: {fileID: 326242455940792935}
 --- !u!1 &7592244509542634791
@@ -723,8 +725,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 362364817429066648}
   m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}

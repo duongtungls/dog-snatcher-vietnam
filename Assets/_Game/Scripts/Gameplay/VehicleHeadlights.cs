@@ -28,6 +28,12 @@ namespace DogSnatcher.Gameplay
     ///
     /// Put this on the rig GameObject that parents the two sets. Any child that is neither set
     /// (the <c>Light2D</c>) simply follows the day/night switch. Allocation-free.
+    ///
+    /// Player rig only: this rig is a SIBLING of the bike's billboard visual (not a child), so it
+    /// never inherits the lean roll <see cref="PlayerCharacterVisual"/> applies when banking into
+    /// a turn. Wire <see cref="playerVisual"/> on the player's rig and this rotates the whole
+    /// light rig to match - the ground throw and lamp glow swing with the steer instead of staying
+    /// screen-locked. Traffic/police rigs leave it null and keep the facing-swap behaviour above.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VehicleHeadlights : MonoBehaviour
@@ -38,6 +44,15 @@ namespace DogSnatcher.Gameplay
         [Tooltip("The rider billboard whose facing drives the swap. One of these two is wired.")]
         [SerializeField] private RiderBillboardVisual riderVisual;
         [SerializeField] private PoliceCharacterVisual policeVisual;
+
+        [Tooltip("Player's bike visual, wired only on the player rig. When set, the whole light " +
+                 "rig yaws to follow its steering lean (see maxSteerYaw) instead of the " +
+                 "riderVisual/policeVisual facing swap below.")]
+        [SerializeField] private PlayerCharacterVisual playerVisual;
+
+        [Tooltip("Yaw, in degrees, applied at full steer (CurrentLean = ±1) when playerVisual " +
+                 "is wired - swings the ground throw into the turn.")]
+        [SerializeField] private float maxSteerYaw = 16f;
 
         [Header("Facing sets")]
         [Tooltip("Lit while we see the vehicle's back: tail lamp plus the throw ahead of it.")]
@@ -93,6 +108,9 @@ namespace DogSnatcher.Gameplay
 
         private void Update()
         {
+            if (playerVisual != null)
+                transform.localRotation = Quaternion.Euler(0f, playerVisual.CurrentLean * maxSteerYaw, 0f);
+
             if (!lit) return;
 
             bool up = riderVisual != null ? riderVisual.IsFacingUp

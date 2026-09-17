@@ -67,6 +67,14 @@ namespace DogSnatcher.Gameplay
         /// </summary>
         public float SnatchReachSeconds => snatchReachSeconds;
 
+        /// <summary>
+        /// Current eased lean, -1 (full left) .. +1 (full right) - the same signed steer space
+        /// <see cref="SetLean"/> takes, after the easing in <see cref="TickLean"/>. Read-only:
+        /// other rigs (e.g. <see cref="VehicleHeadlights"/>) sync their own presentation to it
+        /// without owning the lean state.
+        /// </summary>
+        public float CurrentLean => currentLean;
+
         private void Awake() => Cache();
 
         private void OnEnable()

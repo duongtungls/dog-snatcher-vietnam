@@ -301,6 +301,8 @@ MonoBehaviour:
   timeOfDay: {fileID: 11400000, guid: 2e5879abcd0d3f8bc9e75825aa375ea2, type: 2}
   riderVisual: {fileID: 6273616288843748274}
   policeVisual: {fileID: 0}
+  playerVisual: {fileID: 0}
+  maxSteerYaw: 16
   rearSet: {fileID: 6527152952964139053}
   frontSet: {fileID: 7526546742429506786}
 --- !u!1 &3189763582675869672
@@ -673,8 +675,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.31, y: 1.31, z: 1.31}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 362364817429066648}
   m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}
@@ -960,6 +962,14 @@ PrefabInstance:
     - target: {fileID: 5609481477830154116, guid: 1600dc52e8f6fa7e99cc93403d0b8a1b, type: 3}
       propertyPath: m_Name
       value: ExhaustSmoke
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848499351724984493, guid: 1600dc52e8f6fa7e99cc93403d0b8a1b, type: 3}
+      propertyPath: InitialModule.startSizeY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848499351724984493, guid: 1600dc52e8f6fa7e99cc93403d0b8a1b, type: 3}
+      propertyPath: InitialModule.startSizeZ.minMaxState
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
